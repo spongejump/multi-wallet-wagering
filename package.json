@@ -1,0 +1,26 @@
+{
+  "name": "multi-wallet-wagering",
+  "version": "1.0.0",
+  "main": "index.js",
+  "repository": "https://github.com/gungho0619/multi-wallet-wagering.git",
+  "author": "gungho0619 <tzztntt@gmail.com>",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/express": "^5.0.0",
+    "@types/node": "^22.13.10",
+    "nodemon": "^3.1.9",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.8.2"
+  },
+  "scripts": {
+    "start": "nodemon --exec ts-node src/index.ts",
+    "dev": "ts-node src/config/trackTokenTransfer.ts"
+  },
+  "dependencies": {
+    "@solana/spl-token": "^0.4.13",
+    "@solana/web3.js": "^1.98.0",
+    "dotenv": "^16.4.7",
+    "node-telegram-bot-api": "^0.66.0",
+    "telegraf": "^4.16.3"
+  }
+}

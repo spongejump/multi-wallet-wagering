@@ -150,8 +150,8 @@ The **Solana smart contract** should:
 ✅ **Phase 1: Smart Contract Development**
 - Deploy **Solana smart contract** for:
   - Wallet generation
-  - Accepting **$VS token bets**
-  - Multisig **winner selection**
+   - Accepting **$VS token bets**
+   - Multisig **winner selection**
   - Proportional fund distribution
 
 ✅ **Phase 2: Telegram Bot Backend**
