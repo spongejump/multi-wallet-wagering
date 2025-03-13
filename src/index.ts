@@ -1,56 +1,75 @@
-import { Connection, PublicKey, ConfirmedSignatureInfo } from "@solana/web3.js";
+import { Connection } from "@solana/web3.js";
 import { Telegraf } from "telegraf";
 import dotenv from "dotenv";
-import { getTokenAccounts } from "./config/getAmount";
+import { trackTokenTransfer } from "./config/track";
 
 // Load environment variables
 dotenv.config();
 
-// Load environment variables
-const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || "";
-const TELEGRAM_CHAT_ID = process.env.TELEGRAM_CHAT_ID || "";
-const SOLANA_WALLET1_ADDRESS = process.env.SOLANA_WALLET1_ADDRESS || "";
-const SOLANA_WALLET2_ADDRESS = process.env.SOLANA_WALLET2_ADDRESS || "";
+const TELEGRAM_BOT_TOKEN: string = process.env.TELEGRAM_BOT_TOKEN || "";
+const TELEGRAM_CHAT_ID: string = process.env.TELEGRAM_CHAT_ID || "";
+const SOLANA_WALLETS: string[] = [
+  process.env.SOLANA_WALLET1_ADDRESS || "",
+  process.env.SOLANA_WALLET2_ADDRESS || "",
+].filter(Boolean) as string[]; // Ensure valid wallets
+const TOKEN_MINT_ADDRESS: string = process.env.TOKEN_MINT_ADDRESS || "";
+const RPC_URL: string = process.env.QUIKNODE_RPC || "";
 
-if (!TELEGRAM_BOT_TOKEN || !TELEGRAM_CHAT_ID) {
-  console.error("Missing required environment variables.");
+if (
+  !TELEGRAM_BOT_TOKEN ||
+  !TELEGRAM_CHAT_ID ||
+  !SOLANA_WALLETS.length ||
+  !TOKEN_MINT_ADDRESS
+) {
+  console.error("❌ Missing required environment variables.");
   process.exit(1);
 }
 
-// Initialize Telegram bot
 const bot = new Telegraf(TELEGRAM_BOT_TOKEN);
+// const connection = new Connection("https://api.devnet.solana.com", "confirmed");
+const connection = new Connection(RPC_URL, "confirmed");
+console.log(`✅ Connected to RPC`);
 
-// Solana connection
-const rpcEndpoint = process.env.QUIKNODE_RPC || "";
+async function startTracking() {
+  for (const wallet of SOLANA_WALLETS) {
+    trackTokenTransfer(wallet, TOKEN_MINT_ADDRESS, connection)
+      .then((result) => {
+        if (
+          typeof result === "object" &&
+          result !== null &&
+          "sendTokenAmount" in result &&
+          "tokenSender" in result
+        ) {
+          const { sendTokenAmount, tokenSender } = result as {
+            sendTokenAmount: number;
+            tokenSender: string;
+          };
+          if (sendTokenAmount > 0 && tokenSender) {
+            const message = `🚀 *New Transfer Detected!*
+📤 *Sender:* [${tokenSender}](https://solscan.io/account/${tokenSender})
+📩 *Receiver:* [${wallet}](https://solscan.io/account/${wallet})
+💰 *Amount:*  ${sendTokenAmount} $VS tokens`;
 
-console.log(`rpcEndpoint: ${rpcEndpoint}`);
-
-const connection = new Connection(rpcEndpoint, "confirmed");
-
-// Public key of the wallet to monitor
-
-async function checkTransactions() {
-  try {
-    let res1 = await getTokenAccounts(SOLANA_WALLET1_ADDRESS, connection);
-    let res2 = await getTokenAccounts(SOLANA_WALLET2_ADDRESS, connection);
-
-    let message =
-      "res1 result is:" +
-      JSON.stringify(res1) +
-      "\n" +
-      "res2 result is:" +
-      JSON.stringify(res2);
-
-    await bot.telegram.sendMessage(TELEGRAM_CHAT_ID, message, {
-      parse_mode: "Markdown",
-    });
-  } catch (error) {
-    console.error("Error checking transactions:", error);
+            bot.telegram
+              .sendMessage(TELEGRAM_CHAT_ID, message, {
+                parse_mode: "Markdown",
+              })
+              .then(() => console.log("✅ Notification sent to Telegram!"))
+              .catch((err) => console.error("❌ Telegram Error:", err));
+          }
+        } else {
+          console.error(
+            "❌ Unexpected result format from trackTokenTransfer",
+            result
+          );
+        }
+      })
+      .catch((err) => console.error("❌ Tracking Error:", err));
   }
 }
 
-// Run the check every 10 seconds
-setInterval(checkTransactions, 10 * 1000);
+startTracking();
 
-// Start the bot
-bot.launch().then(() => console.log("Telegram bot started! 🚀"));
+bot
+  .launch()
+  .then(() => console.log("🤖 Telegram bot started successfully! 🚀"));

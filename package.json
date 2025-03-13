@@ -14,11 +14,13 @@
   },
   "scripts": {
     "start": "nodemon --exec ts-node src/index.ts",
-    "dev": "ts-node src/config/trackTokenTransfer.ts"
+    "dev": "nodemon --exec ts-node src/config/track.ts",
+    "test": "nodemon --exec ts-node src/config/test.ts"
   },
   "dependencies": {
     "@solana/spl-token": "^0.4.13",
     "@solana/web3.js": "^1.98.0",
+    "axios": "^1.8.3",
     "dotenv": "^16.4.7",
     "node-telegram-bot-api": "^0.66.0",
     "telegraf": "^4.16.3"
