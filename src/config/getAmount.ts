@@ -5,7 +5,11 @@ import { ParsedTokenAccountData } from "../types";
 
 dotenv.config();
 
-async function getTokenAccounts(wallet: string, solanaConnection: Connection) {
+async function getTokenAccounts(
+  wallet: string,
+  mintAddress: string,
+  solanaConnection: Connection
+) {
   const filters: GetProgramAccountsFilter[] = [
     { dataSize: 165 },
     { memcmp: { offset: 32, bytes: wallet } },
@@ -26,7 +30,11 @@ async function getTokenAccounts(wallet: string, solanaConnection: Connection) {
     return parsedData.parsed.info.tokenAmount.uiAmount;
   });
 
-  return { mintAddresses, tokenBalances };
+  // console.log(
+  //   `mintAddresses: ${mintAddresses}, tokenBalances: ${tokenBalances}`
+  // );
+  const tokenBalance = tokenBalances[mintAddresses.indexOf(mintAddress)];
+  return tokenBalance;
 }
 
 export { getTokenAccounts };

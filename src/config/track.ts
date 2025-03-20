@@ -57,34 +57,35 @@ async function trackTokenTransfer(
           const newBalance = Number(decoded.amount);
           const tokenChange = newBalance - previousBalance;
 
-          if (tokenChange > 0) {
-            sendTokenAmount = tokenChange / Math.pow(10, tokenDecimals); // Adjusting for decimals
+          // if (tokenChange > 0) {
+          sendTokenAmount = Math.abs(tokenChange) / Math.pow(10, tokenDecimals); // Adjusting for decimals
 
-            // Get the transaction signature to identify the sender
-            const confirmedSignatures =
-              await connection.getSignaturesForAddress(associatedTokenAddress, {
-                limit: 1,
-              });
-            if (confirmedSignatures.length > 0) {
-              const txSignature = confirmedSignatures[0].signature;
-              const txDetails = await connection.getTransaction(txSignature, {
-                commitment: "confirmed",
-              });
+          // Get the transaction signature to identify the sender
+          const confirmedSignatures = await connection.getSignaturesForAddress(
+            associatedTokenAddress,
+            {
+              limit: 1,
+            }
+          );
+          if (confirmedSignatures.length > 0) {
+            const txSignature = confirmedSignatures[0].signature;
+            const txDetails = await connection.getTransaction(txSignature, {
+              commitment: "confirmed",
+            });
 
-              if (
-                txDetails &&
-                txDetails.transaction &&
-                txDetails.transaction.message
-              ) {
-                const senderPubKey =
-                  txDetails.transaction.message.accountKeys[0].toBase58();
-                tokenSender = senderPubKey;
-              }
+            if (
+              txDetails &&
+              txDetails.transaction &&
+              txDetails.transaction.message
+            ) {
+              const senderPubKey =
+                txDetails.transaction.message.accountKeys[0].toBase58();
+              tokenSender = senderPubKey;
             }
           }
+          // }
 
           previousBalance = newBalance;
-
           resolve({ sendTokenAmount, tokenSender });
         }
       }
