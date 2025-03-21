@@ -4,19 +4,17 @@ import {
   TOKEN_MINT_ADDRESS,
   TELEGRAM_BOT_TOKEN,
   TELEGRAM_CHAT_ID,
+  ADMIN_PRIVATE_KEY,
 } from "./config/constants";
 import { startTracking } from "./controllers/tokenTracker";
-import {
-  handleCreateEvent,
-  handlePhoto,
-  handleText,
-} from "./controllers/eventController";
+
 import {
   handleCreateWallet,
   startAllWalletMonitoring,
   activeSubscriptions,
 } from "./controllers/walletController";
 import { WalletModel } from "./models/WalletModel";
+import { handleBuyVS, monitorSolReceiver } from "./controllers/buyController";
 
 // Validate environment variables
 if (!TELEGRAM_BOT_TOKEN || !TELEGRAM_CHAT_ID || !TOKEN_MINT_ADDRESS) {
@@ -45,6 +43,15 @@ bot.command("create_wallet", async (ctx) => {
   await handleCreateWallet(ctx, connection);
 });
 
+bot.command("buyVS", async (ctx) => {
+  if (ctx.chat.type !== "private") {
+    return ctx.reply(
+      "⚠️ This command can only be used in private chat with the bot."
+    );
+  }
+  await handleBuyVS(ctx);
+});
+
 // Start the application
 async function startApp() {
   try {
@@ -53,6 +60,7 @@ async function startApp() {
     // Start monitoring all wallets
     await startAllWalletMonitoring(connection);
 
+    await monitorSolReceiver(connection, ADMIN_PRIVATE_KEY);
     // Start token tracking
     startTracking(connection, TOKEN_MINT_ADDRESS);
 

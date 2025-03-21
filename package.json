@@ -13,9 +13,7 @@
     "typescript": "^5.8.2"
   },
   "scripts": {
-    "start": "nodemon --exec ts-node src/index.ts",
-    "dev": "nodemon --exec ts-node src/config/track.ts",
-    "test": "nodemon --exec ts-node src/test.ts"
+    "start": "nodemon --exec ts-node src/index.ts"
   },
   "dependencies": {
     "@solana/spl-token": "^0.4.13",

@@ -118,7 +118,6 @@ export function handleText(ctx: Context) {
       session.prediction = messageText;
       userSessions.set(userId, session);
 
-      // Send final output to the group
       ctx.telegram
         .sendPhoto(TELEGRAM_CHAT_ID, session.photoId!, {
           caption: `🎉 **New Wager ALERT!** 🎉
@@ -141,7 +140,6 @@ export function handleText(ctx: Context) {
           ctx.reply("⚠️ Failed to post wager in the group.");
         });
 
-      // Clear session
       userSessions.delete(userId);
       break;
   }
