@@ -8,6 +8,7 @@ import {
   sendAndConfirmTransaction,
   Keypair,
 } from "@solana/web3.js";
+import axios from "axios";
 import {
   createMint,
   getOrCreateAssociatedTokenAccount,
@@ -21,7 +22,23 @@ import { WalletModel } from "../models/WalletModel";
 const SOL_RECEIVER = "F5ojBQNvSzM3TCNCwj1mGd4qxsuGP2XizRNLRKzRpJd3";
 const VS_TOKEN_MINT = "D7wHZsj4MdNDuuLznrxut4kPztjMcKJ21nPzGe6Qn3MU";
 const VS_TOKEN_DECIMALS = 9;
-const SOL_PRICE = 120;
+const KRAKEN_API_URL = "https://api.kraken.com/0/public/Ticker?pair=SOLUSD";
+
+async function getSolPrice(): Promise<number> {
+  try {
+    const response = await axios.get(KRAKEN_API_URL);
+    if (response.data && response.data.result && response.data.result.SOLUSD) {
+      // Use the last trade price ('c' array, first element)
+      const price = parseFloat(response.data.result.SOLUSD.c[0]);
+      console.log(`Current SOL price: $${price}`);
+      return price;
+    }
+    throw new Error("Invalid response from Kraken API");
+  } catch (error) {
+    console.error("Error fetching SOL price:", error);
+    throw error;
+  }
+}
 
 async function sendSol(
   connection: Connection,
@@ -138,6 +155,7 @@ export async function handleBuyVS(ctx: Context) {
 💸 + 0.001 SOL (for fees)
 📊 Total needed: ${requiredAmount} SOL`);
     }
+    const SOL_PRICE = await getSolPrice();
     const vsTokenAmount = (solAmount * SOL_PRICE) / 0.0000165;
 
     try {
@@ -207,7 +225,7 @@ export async function monitorSolReceiver(
               const senderAddress =
                 txDetails.transaction.message.accountKeys[0].toBase58();
               console.log(`Sender address: ${senderAddress}`);
-
+              const SOL_PRICE = await getSolPrice();
               const vsTokenAmount = (solReceived * SOL_PRICE) / 0.0000165;
 
               const tokenTxSignature = await sendVSTokens(

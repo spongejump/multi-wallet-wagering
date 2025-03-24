@@ -24,8 +24,8 @@ export async function monitorWalletBalance(
 
     let previousBalance =
       (await connection.getBalance(publicKey)) / LAMPORTS_PER_SOL;
-    console.log(`Started monitoring wallet: ${walletAddr}`);
-    console.log(`Initial balance: ${previousBalance} SOL`);
+    // console.log(`Started monitoring wallet: ${walletAddr}`);
+    // console.log(`Initial balance: ${previousBalance} SOL`);
 
     const subscriptionId = connection.onAccountChange(
       publicKey,

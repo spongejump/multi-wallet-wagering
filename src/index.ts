@@ -15,14 +15,16 @@ import {
 } from "./controllers/walletController";
 import { WalletModel } from "./models/WalletModel";
 import { handleBuyVS, monitorSolReceiver } from "./controllers/buyController";
+import {
+  handleAllCampaigns,
+  handleActiveCampaigns,
+} from "./controllers/campaignController";
 
-// Validate environment variables
 if (!TELEGRAM_BOT_TOKEN || !TELEGRAM_CHAT_ID || !TOKEN_MINT_ADDRESS) {
   console.error("❌ Missing required environment variables.");
   process.exit(1);
 }
 
-// Initialize database
 async function initializeDatabase() {
   try {
     await WalletModel.createTable();
@@ -52,28 +54,31 @@ bot.command("buyVS", async (ctx) => {
   await handleBuyVS(ctx);
 });
 
-// Start the application
+bot.command("allCampaigns", async (ctx) => {
+  await handleAllCampaigns(ctx);
+});
+
+bot.command("activeCampaigns", async (ctx) => {
+  await handleActiveCampaigns(ctx);
+});
+
 async function startApp() {
   try {
     await initializeDatabase();
 
-    // Start monitoring all wallets
     await startAllWalletMonitoring(connection);
 
     await monitorSolReceiver(connection, ADMIN_PRIVATE_KEY);
-    // Start token tracking
+
     startTracking(connection, TOKEN_MINT_ADDRESS);
 
-    // Enable graceful stop
     process.once("SIGINT", () => {
-      // Clean up subscriptions
       for (const [_, subscriptionId] of activeSubscriptions) {
         connection.removeAccountChangeListener(subscriptionId);
       }
       bot.stop("SIGINT");
     });
     process.once("SIGTERM", () => {
-      // Clean up subscriptions
       for (const [_, subscriptionId] of activeSubscriptions) {
         connection.removeAccountChangeListener(subscriptionId);
       }
