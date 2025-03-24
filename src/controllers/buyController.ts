@@ -24,11 +24,10 @@ const VS_TOKEN_MINT = "D7wHZsj4MdNDuuLznrxut4kPztjMcKJ21nPzGe6Qn3MU";
 const VS_TOKEN_DECIMALS = 9;
 const KRAKEN_API_URL = "https://api.kraken.com/0/public/Ticker?pair=SOLUSD";
 
-async function getSolPrice(): Promise<number> {
+export async function getSolPrice(): Promise<number> {
   try {
     const response = await axios.get(KRAKEN_API_URL);
     if (response.data && response.data.result && response.data.result.SOLUSD) {
-      // Use the last trade price ('c' array, first element)
       const price = parseFloat(response.data.result.SOLUSD.c[0]);
       console.log(`Current SOL price: $${price}`);
       return price;
@@ -67,7 +66,7 @@ async function sendSol(
   }
 }
 
-async function sendVSTokens(
+export async function sendVSTokens(
   connection: Connection,
   adminKeypair: Keypair,
   receiverAddress: string,
@@ -159,7 +158,6 @@ export async function handleBuyVS(ctx: Context) {
     const vsTokenAmount = (solAmount * SOL_PRICE) / 0.0000165;
 
     try {
-      // Send SOL
       const signature = await sendSol(
         connection,
         userKeypair,

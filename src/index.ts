@@ -18,6 +18,8 @@ import { handleBuyVS, monitorSolReceiver } from "./controllers/buyController";
 import {
   handleAllCampaigns,
   handleActiveCampaigns,
+  handleWager,
+  handleWagerButton,
 } from "./controllers/campaignController";
 
 if (!TELEGRAM_BOT_TOKEN || !TELEGRAM_CHAT_ID || !TOKEN_MINT_ADDRESS) {
@@ -60,6 +62,14 @@ bot.command("allCampaigns", async (ctx) => {
 
 bot.command("activeCampaigns", async (ctx) => {
   await handleActiveCampaigns(ctx);
+});
+
+bot.command("wager", async (ctx) => {
+  await handleWager(ctx);
+});
+
+bot.action(/^wager_(left|right)_\d+$/, async (ctx) => {
+  await handleWagerButton(ctx);
 });
 
 async function startApp() {
