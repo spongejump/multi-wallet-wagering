@@ -87,7 +87,7 @@ export async function handleActiveCampaigns(ctx: Context) {
     let message = "🎯 *Active Campaigns*\n\n";
 
     for (const campaign of campaigns) {
-      message += `*${campaign.name}*
+      message += `*${campaign.campaign_id} - ${campaign.name}*
 👈 ${campaign.left_button} vs 👉 ${campaign.right_button}
 📝 ${campaign.description.substring(0, 100)}${
         campaign.description.length > 100 ? "..." : ""
@@ -163,7 +163,7 @@ export async function handleWager(ctx: Context) {
       });
     }
 
-    const campaignMessage = `🎯 *${campaign.name}*
+    const campaignMessage = `🎯 *${campaign.campaign_id} - ${campaign.name}*
 
 📝 *Description:* ${campaign.description}
 
