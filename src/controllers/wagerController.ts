@@ -3,10 +3,14 @@ import { CampaignModel } from "../models/CampaignModel";
 import { Markup } from "telegraf";
 import { Keypair, PublicKey } from "@solana/web3.js";
 import bs58 from "bs58";
-import { Connection } from "@solana/web3.js";
+import { connection } from "../config/connection";
 import { WalletModel } from "../models/WalletModel";
 import { sendVSTokens, getSolPrice } from "./buyController";
-import { VS_TOKEN_MINT, VS_TOKEN_DECIMALS } from "../config/constants";
+import {
+  VS_TOKEN_MINT,
+  VS_TOKEN_DECIMALS,
+  getSolscanUrl,
+} from "../config/constants";
 import { getOrCreateAssociatedTokenAccount } from "@solana/spl-token";
 import { WagerModel } from "../models/WagerModel";
 
@@ -142,10 +146,6 @@ export async function handleWagerButton(ctx: any) {
     }
 
     try {
-      const connection = new Connection(
-        "https://api.devnet.solana.com",
-        "confirmed"
-      );
       const userKeypair = Keypair.fromSecretKey(
         bs58.decode(userWallet.walletKey)
       );
@@ -202,7 +202,7 @@ export async function handleWagerButton(ctx: any) {
 🎲 *Prediction:* ${
           side === "left" ? campaign.left_button : campaign.right_button
         }
-🔍 [View Transaction](https://solscan.io/tx/${signature}?cluster=devnet)`;
+🔍 [View Transaction](${getSolscanUrl(signature)})`;
 
         await ctx.editMessageText(confirmMessage, {
           parse_mode: "Markdown",

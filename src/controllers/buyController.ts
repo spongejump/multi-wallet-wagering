@@ -23,7 +23,10 @@ import {
   VS_TOKEN_MINT,
   VS_TOKEN_DECIMALS,
   KRAKEN_API_URL,
+  PRODUCTION_MODE,
+  getSolscanUrl,
 } from "../config/constants";
+import { connection } from "../config/connection";
 
 export async function getSolPrice(): Promise<number> {
   try {
@@ -135,10 +138,6 @@ export async function handleBuyVS(ctx: Context) {
         "❌ You don't have a wallet. Please create one using /create_wallet"
       );
     }
-    const connection = new Connection(
-      "https://api.devnet.solana.com",
-      "confirmed"
-    );
     const userKeypair = Keypair.fromSecretKey(
       bs58.decode(userWallet.walletKey)
     );
@@ -171,7 +170,7 @@ export async function handleBuyVS(ctx: Context) {
 💰 *Transaction Details:*
 • Sent: ${solAmount} SOL
 • Received: VS tokens: ${vsTokenAmount.toFixed(4)}
-• [Transaction](https://solscan.io/tx/${signature}?cluster=devnet)
+• [Transaction](${getSolscanUrl(signature)})
 
 ⏳ VS tokens are automatically transferred to your wallet.`;
 
