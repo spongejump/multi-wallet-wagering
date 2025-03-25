@@ -60,7 +60,7 @@ export async function handleWager(ctx: Context) {
     }
 
     const solPrice = await getSolPrice();
-    const vsTokenAmount = (dollarAmount * solPrice) / 0.0000165;
+    const vsTokenAmount = dollarAmount / 0.0000165;
 
     if (ctx.from) {
       userWagerSessions.set(ctx.from.id, {
