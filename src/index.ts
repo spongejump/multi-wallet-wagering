@@ -18,9 +18,9 @@ import { handleBuyVS, monitorSolReceiver } from "./controllers/buyController";
 import {
   handleAllCampaigns,
   handleActiveCampaigns,
-  handleWager,
-  handleWagerButton,
 } from "./controllers/campaignController";
+
+import { handleWager, handleWagerButton } from "./controllers/wagerController";
 
 if (!TELEGRAM_BOT_TOKEN || !TELEGRAM_CHAT_ID || !TOKEN_MINT_ADDRESS) {
   console.error("❌ Missing required environment variables.");
