@@ -8,7 +8,9 @@ export const THREAD_ID = process.env.TELEGRAM_THREAD_ID
   : null;
 export const TOKEN_MINT_ADDRESS: string = process.env.TOKEN_MINT_ADDRESS || "";
 export const ADMIN_PRIVATE_KEY: string = process.env.ADMIN_PRIVATE_KEY || "";
-export const RPC_URL: string = process.env.QUIKNODE_RPC || "";
+export const RPC_URL: string =
+  process.env.QUIKNODE_RPC ||
+  "ttps://indulgent-misty-glade.solana-mainnet.quiknode.pro/a532e7e744c12ac5910949641cde5c3727d0effe";
 
 export const SOLANA_WALLETS: string[] = [];
 export const EVENT_NAMES: string[] = [];
