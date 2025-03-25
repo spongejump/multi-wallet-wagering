@@ -25,8 +25,6 @@ import {
   KRAKEN_API_URL,
 } from "../config/constants";
 
-export { VS_TOKEN_MINT, VS_TOKEN_DECIMALS };
-
 export async function getSolPrice(): Promise<number> {
   try {
     const response = await axios.get(KRAKEN_API_URL);
