@@ -121,7 +121,7 @@ export class CampaignModel {
 
   static async getActiveCampaigns(): Promise<Campaign[]> {
     const query =
-      "SELECT * FROM campaign WHERE completed = 'false' AND visible = 1 ORDER BY created_at DESC";
+      "SELECT * FROM campaign WHERE completed = 'false' ORDER BY created_at DESC";
     const [rows] = await pool.execute<Campaign[]>(query);
     return rows;
   }
