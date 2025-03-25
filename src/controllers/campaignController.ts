@@ -1,11 +1,13 @@
 import { Context } from "telegraf";
 import { CampaignModel } from "../models/CampaignModel";
 import { Markup } from "telegraf";
-import { Keypair } from "@solana/web3.js";
+import { Keypair, PublicKey } from "@solana/web3.js";
 import bs58 from "bs58";
 import { Connection } from "@solana/web3.js";
 import { WalletModel } from "../models/WalletModel";
 import { sendVSTokens, getSolPrice } from "./buyController";
+import { VS_TOKEN_MINT, VS_TOKEN_DECIMALS } from "../config/constants";
+import { getOrCreateAssociatedTokenAccount } from "@solana/spl-token";
 
 interface WagerSession {
   campaignId: number;
@@ -27,7 +29,7 @@ export async function handleAllCampaigns(ctx: Context) {
     let currentChunk = "📋 *All Campaigns*\n\n";
 
     for (const campaign of campaigns) {
-      const campaignInfo = `*${campaign.name}*
+      const campaignInfo = `*${campaign.campaign_id} - ${campaign.name}*
 📝 Description: *${campaign.description.substring(0, 100)}${
         campaign.description.length > 100 ? "..." : ""
       }*
@@ -242,6 +244,25 @@ export async function handleWagerButton(ctx: any) {
         bs58.decode(userWallet.walletKey)
       );
 
+      const userTokenAccount = await getOrCreateAssociatedTokenAccount(
+        connection,
+        userKeypair,
+        new PublicKey(VS_TOKEN_MINT),
+        userKeypair.publicKey
+      );
+
+      const tokenBalance =
+        Number(userTokenAccount.amount) / Math.pow(10, VS_TOKEN_DECIMALS);
+
+      if (tokenBalance < session.amount) {
+        await ctx.answerCbQuery(
+          `❌ Insufficient VS tokens. You have ${tokenBalance.toFixed(
+            2
+          )} VS but need ${session.amount.toFixed(2)} VS`
+        );
+        return;
+      }
+
       const signature = await sendVSTokens(
         connection,
         userKeypair,
@@ -260,13 +281,20 @@ export async function handleWagerButton(ctx: any) {
 
       await ctx.editMessageText(confirmMessage, {
         parse_mode: "Markdown",
-        disable_web_page_preview: true,
       });
 
       userWagerSessions.delete(ctx.from.id);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error processing wager transaction:", error);
-      await ctx.answerCbQuery("❌ Error processing transaction");
+      let errorMessage = "❌ Error processing transaction";
+
+      if (
+        error.logs?.some((log: string) => log.includes("insufficient funds"))
+      ) {
+        errorMessage = "❌ Insufficient VS tokens in your wallet";
+      }
+
+      await ctx.answerCbQuery(errorMessage);
     }
   } catch (error) {
     console.error("Error handling wager button:", error);

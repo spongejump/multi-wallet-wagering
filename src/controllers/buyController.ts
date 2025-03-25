@@ -18,11 +18,14 @@ import {
 } from "@solana/spl-token";
 import bs58 from "bs58";
 import { WalletModel } from "../models/WalletModel";
+import {
+  SOL_RECEIVER,
+  VS_TOKEN_MINT,
+  VS_TOKEN_DECIMALS,
+  KRAKEN_API_URL,
+} from "../config/constants";
 
-const SOL_RECEIVER = "F5ojBQNvSzM3TCNCwj1mGd4qxsuGP2XizRNLRKzRpJd3";
-const VS_TOKEN_MINT = "D7wHZsj4MdNDuuLznrxut4kPztjMcKJ21nPzGe6Qn3MU";
-const VS_TOKEN_DECIMALS = 9;
-const KRAKEN_API_URL = "https://api.kraken.com/0/public/Ticker?pair=SOLUSD";
+export { VS_TOKEN_MINT, VS_TOKEN_DECIMALS };
 
 export async function getSolPrice(): Promise<number> {
   try {
