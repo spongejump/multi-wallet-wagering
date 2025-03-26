@@ -23,7 +23,6 @@ import {
   VS_TOKEN_MINT,
   VS_TOKEN_DECIMALS,
   KRAKEN_API_URL,
-  PRODUCTION_MODE,
   getSolscanUrl,
 } from "../config/constants";
 import { connection } from "../config/connection";
@@ -72,23 +71,25 @@ async function sendSol(
 
 export async function sendVSTokens(
   connection: Connection,
-  adminKeypair: Keypair,
+  senderKeypair: Keypair,
   receiverAddress: string,
   amount: number
 ) {
   try {
     const adminTokenAccount = await getOrCreateAssociatedTokenAccount(
       connection,
-      adminKeypair,
+      senderKeypair,
       new PublicKey(VS_TOKEN_MINT),
-      adminKeypair.publicKey
+      senderKeypair.publicKey,
+      true
     );
 
     const receiverTokenAccount = await getOrCreateAssociatedTokenAccount(
       connection,
-      adminKeypair,
+      senderKeypair,
       new PublicKey(VS_TOKEN_MINT),
-      new PublicKey(receiverAddress)
+      new PublicKey(receiverAddress),
+      true
     );
 
     const tokenAmount = Math.floor(amount * Math.pow(10, VS_TOKEN_DECIMALS));
@@ -96,13 +97,13 @@ export async function sendVSTokens(
     const transferInstruction = createTransferInstruction(
       adminTokenAccount.address,
       receiverTokenAccount.address,
-      adminKeypair.publicKey,
+      senderKeypair.publicKey,
       tokenAmount
     );
 
     const transaction = new Transaction().add(transferInstruction);
     const signature = await sendAndConfirmTransaction(connection, transaction, [
-      adminKeypair,
+      senderKeypair,
     ]);
 
     console.log(`Token transfer successful: ${signature}`);

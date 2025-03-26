@@ -46,10 +46,6 @@ export async function handleWager(ctx: Context) {
       return ctx.reply("❌ This campaign is already completed");
     }
 
-    if (campaign.lock_at && new Date(campaign.lock_at) <= new Date()) {
-      return ctx.reply("❌ This campaign is locked for betting");
-    }
-
     if (!ctx.from?.username) {
       return ctx.reply(
         "❌ You must have a Telegram username to use this command."
@@ -154,7 +150,8 @@ export async function handleWagerButton(ctx: any) {
         connection,
         userKeypair,
         new PublicKey(VS_TOKEN_MINT),
-        userKeypair.publicKey
+        userKeypair.publicKey,
+        true
       );
 
       const tokenBalance =
