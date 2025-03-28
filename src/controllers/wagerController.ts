@@ -154,6 +154,14 @@ export async function handleWagerButton(ctx: any) {
         true
       );
 
+      await getOrCreateAssociatedTokenAccount(
+        connection,
+        userKeypair,
+        new PublicKey(VS_TOKEN_MINT),
+        new PublicKey(targetWallet),
+        true
+      );
+
       const tokenBalance =
         Number(userTokenAccount.amount) / Math.pow(10, VS_TOKEN_DECIMALS);
 

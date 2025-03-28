@@ -2,6 +2,7 @@ import { pool } from "../config/database";
 
 export interface Wallet {
   id?: number;
+  telegram_id: string;
   walletName: string;
   walletAddr: string;
   walletKey: string;
@@ -14,6 +15,7 @@ export class WalletModel {
     const query = `
       CREATE TABLE IF NOT EXISTS wallets (
         id INT AUTO_INCREMENT PRIMARY KEY,
+        telegram_id VARCHAR(255) NOT NULL UNIQUE,
         walletName VARCHAR(255) NOT NULL,
         walletAddr VARCHAR(255) NOT NULL UNIQUE,
         walletKey VARCHAR(255) NOT NULL,
@@ -33,12 +35,13 @@ export class WalletModel {
 
   static async createWallet(wallet: Wallet): Promise<void> {
     const query = `
-      INSERT INTO wallets (walletName, walletAddr, walletKey, sol_received, tx_hash)
-      VALUES (?, ?, ?, ?, ?)
+      INSERT INTO wallets (telegram_id, walletName, walletAddr, walletKey, sol_received, tx_hash)
+      VALUES (?, ?, ?, ?, ?, ?)
     `;
 
     try {
       await pool.execute(query, [
+        wallet.telegram_id,
         wallet.walletName,
         wallet.walletAddr,
         wallet.walletKey,
@@ -55,6 +58,19 @@ export class WalletModel {
     const query = "SELECT * FROM wallets WHERE walletName = ?";
     try {
       const [rows]: any = await pool.execute(query, [username]);
+      return rows[0] || null;
+    } catch (error) {
+      console.error("Error fetching wallet:", error);
+      throw error;
+    }
+  }
+
+  static async getWalletByTelegramId(
+    telegram_id: string
+  ): Promise<Wallet | null> {
+    const query = "SELECT * FROM wallets WHERE telegram_id = ?";
+    try {
+      const [rows]: any = await pool.execute(query, [telegram_id]);
       return rows[0] || null;
     } catch (error) {
       console.error("Error fetching wallet:", error);

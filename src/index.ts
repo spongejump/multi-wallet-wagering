@@ -12,6 +12,7 @@ import {
   handleCreateWallet,
   startAllWalletMonitoring,
   activeSubscriptions,
+  handleShowProfile,
 } from "./controllers/walletController";
 import { WalletModel } from "./models/WalletModel";
 import { handleBuyVS, monitorSolReceiver } from "./controllers/buyController";
@@ -70,6 +71,10 @@ bot.command("wager", async (ctx) => {
 
 bot.action(/^wager_(left|right)_\d+$/, async (ctx) => {
   await handleWagerButton(ctx);
+});
+
+bot.command("show_profile", async (ctx) => {
+  await handleShowProfile(ctx, connection);
 });
 
 async function startApp() {

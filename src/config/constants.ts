@@ -20,6 +20,7 @@ export const SOL_RECEIVER =
   process.env.SOL_RECEIVER || "F5ojBQNvSzM3TCNCwj1mGd4qxsuGP2XizRNLRKzRpJd3";
 export const VS_TOKEN_MINT =
   process.env.VS_TOKEN_MINT || "D7wHZsj4MdNDuuLznrxut4kPztjMcKJ21nPzGe6Qn3MU";
+
 export const VS_TOKEN_DECIMALS = Number(process.env.VS_TOKEN_DECIMALS) || 9;
 
 export const KRAKEN_API_URL =

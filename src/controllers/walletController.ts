@@ -7,6 +7,7 @@ import {
 } from "@solana/web3.js";
 import { WalletModel } from "../models/WalletModel";
 import bs58 from "bs58";
+import { connection } from "../config/connection";
 
 export const activeSubscriptions = new Map<string, number>();
 
@@ -54,16 +55,17 @@ export async function monitorWalletBalance(
 
 export async function handleCreateWallet(ctx: Context, connection: Connection) {
   try {
-    if (!ctx.from?.username) {
+    if (!ctx.from?.username || !ctx.from?.id) {
       await ctx.reply(
         "❌ You must have a Telegram username to create a wallet."
       );
       return;
     }
 
-    const existingWallet = await WalletModel.getWalletByUsername(
-      ctx.from.username
-    );
+    const telegramId = ctx.from.id.toString();
+    console.log(`Creating wallet for Telegram ID: ${telegramId}`);
+
+    const existingWallet = await WalletModel.getWalletByTelegramId(telegramId);
     if (existingWallet) {
       await ctx.reply("❌ You already have a wallet registered!");
       return;
@@ -74,6 +76,7 @@ export async function handleCreateWallet(ctx: Context, connection: Connection) {
     const privateKey = bs58.encode(keypair.secretKey);
 
     await WalletModel.createWallet({
+      telegram_id: telegramId,
       walletName: ctx.from.username,
       walletAddr: publicKey,
       walletKey: privateKey,
@@ -120,5 +123,46 @@ export async function startAllWalletMonitoring(connection: Connection) {
     console.log(`Started monitoring ${wallets.length} wallets`);
   } catch (error) {
     console.error("Error starting wallet monitoring:", error);
+  }
+}
+
+export async function handleShowProfile(ctx: Context, connection: Connection) {
+  try {
+    if (!ctx.from?.id) {
+      await ctx.reply("❌ Could not identify user.");
+      return;
+    }
+
+    const telegramId = ctx.from.id.toString();
+    console.log(`Fetching profile for Telegram ID: ${telegramId}`);
+
+    const wallet = await WalletModel.getWalletByTelegramId(telegramId);
+
+    if (!wallet) {
+      await ctx.reply(
+        "❌ You don't have a wallet yet. Create one using /create_wallet"
+      );
+      return;
+    }
+
+    // Get current SOL balance
+    const publicKey = new PublicKey(wallet.walletAddr);
+    const balance = (await connection.getBalance(publicKey)) / LAMPORTS_PER_SOL;
+
+    const message = `👤 *Your Profile*
+
+📝 *Wallet Details:*
+• Username: \`${wallet.walletName}\`
+• Address: \`${wallet.walletAddr}\`
+• Balance: ${balance.toFixed(4)} SOL
+• Total SOL Received: ${wallet.sol_received} SOL
+`;
+
+    await ctx.reply(message, {
+      parse_mode: "Markdown",
+    });
+  } catch (error) {
+    console.error("Error showing profile:", error);
+    await ctx.reply("❌ Error fetching your profile. Please try again later.");
   }
 }
