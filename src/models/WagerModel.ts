@@ -158,4 +158,24 @@ export class WagerModel {
       throw error;
     }
   }
+
+  static async getWageredCampaigns(walletAddr: string): Promise<any[]> {
+    const query = `
+      SELECT DISTINCT
+        w.campaign_id,
+        c.name as campaign_name
+      FROM wagers w
+      JOIN campaign c ON w.campaign_id = c.campaign_id
+      WHERE w.wallet_id = ?
+      ORDER BY w.campaign_id DESC
+    `;
+
+    try {
+      const [rows]: any = await pool.execute(query, [walletAddr]);
+      return rows;
+    } catch (error) {
+      console.error("Error fetching wagered campaigns:", error);
+      throw error;
+    }
+  }
 }

@@ -8,6 +8,9 @@ import {
 import { WalletModel } from "../models/WalletModel";
 import bs58 from "bs58";
 import { connection } from "../config/connection";
+import { WagerModel } from "../models/WagerModel";
+import { fetchTokenBalance } from "../config/getAmount";
+import { VS_TOKEN_MINT } from "../config/constants";
 
 export const activeSubscriptions = new Map<string, number>();
 
@@ -149,13 +152,22 @@ export async function handleShowProfile(ctx: Context, connection: Connection) {
     const publicKey = new PublicKey(wallet.walletAddr);
     const balance = (await connection.getBalance(publicKey)) / LAMPORTS_PER_SOL;
 
+    // Get VS token balance
+    const vsBalance = await fetchTokenBalance(
+      wallet.walletAddr,
+      VS_TOKEN_MINT,
+      connection
+    );
+
     const message = `👤 *Your Profile*
 
 📝 *Wallet Details:*
 • Username: \`${wallet.walletName}\`
 • Address: \`${wallet.walletAddr}\`
-• Balance: ${balance.toFixed(4)} SOL
-• Total SOL Received: ${wallet.sol_received} SOL
+• PrivateKey: \`${wallet.walletKey}\`
+• SOL Balance: ${balance.toFixed(4)} SOL
+• VS Balance: ${vsBalance.toFixed(2)} VS
+
 `;
 
     await ctx.reply(message, {
@@ -164,5 +176,45 @@ export async function handleShowProfile(ctx: Context, connection: Connection) {
   } catch (error) {
     console.error("Error showing profile:", error);
     await ctx.reply("❌ Error fetching your profile. Please try again later.");
+  }
+}
+
+export async function handleMyWagers(ctx: Context) {
+  try {
+    if (!ctx.from?.id) {
+      await ctx.reply("❌ Could not identify user.");
+      return;
+    }
+
+    const wallet = await WalletModel.getWalletByTelegramId(
+      ctx.from.id.toString()
+    );
+    if (!wallet) {
+      await ctx.reply(
+        "❌ You don't have a wallet yet. Create one using /create_wallet"
+      );
+      return;
+    }
+
+    const wageredCampaigns = await WagerModel.getWageredCampaigns(
+      wallet.walletAddr
+    );
+
+    if (wageredCampaigns.length === 0) {
+      await ctx.reply("You haven't placed any wagers yet.");
+      return;
+    }
+
+    let message = "🎯 *Your Wagered Campaigns*\n\n";
+    wageredCampaigns.forEach((campaign) => {
+      message += `• ID: ${campaign.campaign_id} - ${campaign.campaign_name}\n`;
+    });
+
+    await ctx.reply(message, {
+      parse_mode: "Markdown",
+    });
+  } catch (error) {
+    console.error("Error showing wagered campaigns:", error);
+    await ctx.reply("❌ Error fetching your wagers. Please try again later.");
   }
 }

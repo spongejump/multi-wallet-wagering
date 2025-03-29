@@ -5,7 +5,7 @@ import { ParsedTokenAccountData } from "../types";
 
 dotenv.config();
 
-async function getTokenAccounts(
+async function fetchTokenBalance(
   wallet: string,
   mintAddress: string,
   solanaConnection: Connection
@@ -30,11 +30,8 @@ async function getTokenAccounts(
     return parsedData.parsed.info.tokenAmount.uiAmount;
   });
 
-  // console.log(
-  //   `mintAddresses: ${mintAddresses}, tokenBalances: ${tokenBalances}`
-  // );
   const tokenBalance = tokenBalances[mintAddresses.indexOf(mintAddress)];
   return tokenBalance;
 }
 
-export { getTokenAccounts };
+export { fetchTokenBalance };

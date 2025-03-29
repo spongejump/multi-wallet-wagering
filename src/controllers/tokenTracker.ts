@@ -61,7 +61,6 @@ export async function trackTokenTransfer(
 
         sendTokenAmount = Math.abs(tokenChange) / Math.pow(10, tokenDecimals);
 
-        // Get the transaction signature to identify the sender
         const confirmedSignatures = await connection.getSignaturesForAddress(
           associatedTokenAddress,
           { limit: 1 }
