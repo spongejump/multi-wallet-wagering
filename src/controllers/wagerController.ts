@@ -13,6 +13,7 @@ import {
 } from "../config/constants";
 import { getOrCreateAssociatedTokenAccount } from "@solana/spl-token";
 import { WagerModel } from "../models/WagerModel";
+import { fetchTokenBalance } from "../config/getAmount";
 
 interface WagerSession {
   campaignId: number;
@@ -146,28 +147,16 @@ export async function handleWagerButton(ctx: any) {
         bs58.decode(userWallet.walletKey)
       );
 
-      const userTokenAccount = await getOrCreateAssociatedTokenAccount(
-        connection,
-        userKeypair,
-        new PublicKey(VS_TOKEN_MINT),
-        userKeypair.publicKey,
-        true
-      );
+      const currentBalance =
+        (await fetchTokenBalance(
+          userWallet.walletAddr,
+          VS_TOKEN_MINT,
+          connection
+        )) || 0;
 
-      await getOrCreateAssociatedTokenAccount(
-        connection,
-        userKeypair,
-        new PublicKey(VS_TOKEN_MINT),
-        new PublicKey(targetWallet),
-        true
-      );
-
-      const tokenBalance =
-        Number(userTokenAccount.amount) / Math.pow(10, VS_TOKEN_DECIMALS);
-
-      if (tokenBalance < session.amount) {
+      if (currentBalance < session.amount) {
         await ctx.answerCbQuery(
-          `❌ Insufficient VS tokens. You have ${tokenBalance.toFixed(
+          `❌ Insufficient VS tokens. You have ${currentBalance.toFixed(
             2
           )} VS but need ${session.amount.toFixed(2)} VS`
         );
@@ -187,7 +176,7 @@ export async function handleWagerButton(ctx: any) {
       const wagerId = await WagerModel.createWager(wagerData);
 
       if (!wagerId) {
-        throw new Error("Failed to create wager record");
+        throw new Error("Failed to add wager record");
       }
 
       try {

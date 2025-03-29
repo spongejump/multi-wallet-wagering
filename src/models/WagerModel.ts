@@ -161,12 +161,14 @@ export class WagerModel {
 
   static async getWageredCampaigns(walletAddr: string): Promise<any[]> {
     const query = `
-      SELECT DISTINCT
+      SELECT 
         w.campaign_id,
-        c.name as campaign_name
+        c.name as campaign_name,
+        SUM(w.amount) as total_amount
       FROM wagers w
       JOIN campaign c ON w.campaign_id = c.campaign_id
       WHERE w.wallet_id = ?
+      GROUP BY w.campaign_id, c.name
       ORDER BY w.campaign_id DESC
     `;
 

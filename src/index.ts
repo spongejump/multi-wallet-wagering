@@ -58,6 +58,24 @@ bot.command("buyVS", async (ctx) => {
   await handleBuyVS(ctx);
 });
 
+bot.command("help", async (ctx) => {
+  const helpMessage = `
+🤖 *Available Commands:*
+
+/create\\_wallet \\- Create a new wallet \\(private chat only\\)
+/buyVS \\[SOL amount\\] \\- Buy VS tokens \\(private chat only\\)
+/allCampaigns \\- View all campaigns
+/activeCampaigns \\- View active campaigns
+/wager \\[campaignId\\] \\[$amount\\] \\- Place a wager
+/show\\_profile \\- Show your profile
+/show\\_wages \\- View your wagers
+/help \\- Show this help message
+
+⚠️ Some commands are only available in private chat with the bot\\.`;
+
+  await ctx.reply(helpMessage, { parse_mode: "MarkdownV2" });
+});
+
 bot.command("allCampaigns", async (ctx) => {
   await handleAllCampaigns(ctx);
 });

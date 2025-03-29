@@ -137,7 +137,6 @@ export async function handleShowProfile(ctx: Context, connection: Connection) {
     }
 
     const telegramId = ctx.from.id.toString();
-    console.log(`Fetching profile for Telegram ID: ${telegramId}`);
 
     const wallet = await WalletModel.getWalletByTelegramId(telegramId);
 
@@ -153,11 +152,9 @@ export async function handleShowProfile(ctx: Context, connection: Connection) {
     const balance = (await connection.getBalance(publicKey)) / LAMPORTS_PER_SOL;
 
     // Get VS token balance
-    const vsBalance = await fetchTokenBalance(
-      wallet.walletAddr,
-      VS_TOKEN_MINT,
-      connection
-    );
+    const vsBalance =
+      (await fetchTokenBalance(wallet.walletAddr, VS_TOKEN_MINT, connection)) ||
+      0;
 
     const message = `👤 *Your Profile*
 
@@ -206,8 +203,12 @@ export async function handleMyWagers(ctx: Context) {
     }
 
     let message = "🎯 *Your Wagered Campaigns*\n\n";
+    let totalWagerAmount = 0;
+
     wageredCampaigns.forEach((campaign) => {
-      message += `• ID: ${campaign.campaign_id} - ${campaign.campaign_name}\n`;
+      message += `• ID: *${campaign.campaign_id}* - *${campaign.campaign_name}*\n`;
+      message += `  Total Wagered: *${campaign.total_amount}* $VS\n`;
+      totalWagerAmount += Number(campaign.total_amount);
     });
 
     await ctx.reply(message, {
