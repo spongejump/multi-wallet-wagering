@@ -23,6 +23,8 @@ import {
 } from "./controllers/campaignController";
 
 import { handleWager, handleWagerButton } from "./controllers/wagerController";
+import path from "path";
+import fs from "fs";
 
 if (!TELEGRAM_BOT_TOKEN || !TELEGRAM_CHAT_ID || !TOKEN_MINT_ADDRESS) {
   console.error("❌ Missing required environment variables.");
@@ -56,6 +58,41 @@ bot.command("buyVS", async (ctx) => {
     );
   }
   await handleBuyVS(ctx);
+});
+
+bot.command("start", async (ctx) => {
+  const welcomeMessage = `*WagerVS Bot* is the ultimate PVP experience in web3\\. 
+
+🤖Enjoy the *ONLY* AI Agent Predictions Market Bot to offer:
+
+• Making wagers on everything sports, web3, politics & more
+• User Custom Wagers \\(coming soon\\!\\)
+• Revenue Share Referral Links \\(coming soon\\!\\)
+• AI Agent Predictions \\(coming soon\\!\\)
+• Create a wallet
+• Airdrops to leaderboard
+• Buy \\$VS
+
+/help to get started
+
+🎮Web App: [www\\.wagervs\\.fun](https://www.wagervs.fun)
+📚Docs: [wagervs\\.fun/whitepaper/](https://wagervs.fun/whitepaper/)`;
+
+  try {
+    const imagePath = path.join(__dirname, "assets", "botLogo.png");
+    const imageBuffer = fs.readFileSync(imagePath);
+
+    await ctx.replyWithPhoto(
+      { source: imageBuffer },
+      {
+        caption: welcomeMessage,
+        parse_mode: "MarkdownV2",
+      }
+    );
+  } catch (error) {
+    console.error("Error sending start message:", error);
+    await ctx.sendMessage("Welcome to WagerVS Bot! Type /help to get started.");
+  }
 });
 
 bot.command("help", async (ctx) => {
