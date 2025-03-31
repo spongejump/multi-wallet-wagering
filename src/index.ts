@@ -23,8 +23,9 @@ import {
 } from "./controllers/campaignController";
 
 import { handleWager, handleWagerButton } from "./controllers/wagerController";
-import path from "path";
-import fs from "fs";
+// import path from "path";
+// import fs from "fs";
+import { usernameMonitor } from "./middleware/usernameMonitor";
 
 if (!TELEGRAM_BOT_TOKEN || !TELEGRAM_CHAT_ID || !TOKEN_MINT_ADDRESS) {
   console.error("❌ Missing required environment variables.");
@@ -40,6 +41,8 @@ async function initializeDatabase() {
     process.exit(1);
   }
 }
+
+bot.use(usernameMonitor);
 
 bot.command("create_wallet", async (ctx) => {
   if (ctx.chat.type !== "private") {

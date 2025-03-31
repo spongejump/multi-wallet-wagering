@@ -79,11 +79,9 @@ export async function handleCreateWallet(ctx: Context, connection: Connection) {
     const publicKey = keypair.publicKey.toString();
     const privateKey = bs58.encode(keypair.secretKey);
 
-    const generateRandomReferralCode = () => {
-      return crypto.randomInt(1000000000, 9999999999).toString();
-    };
-
-    const referralCode = generateRandomReferralCode();
+    // const generateRandomReferralCode = () => {
+    //   return crypto.randomInt(1000000000, 9999999999).toString();
+    // };
 
     await WalletModel.createWallet({
       telegram_id: telegramId,
@@ -92,7 +90,6 @@ export async function handleCreateWallet(ctx: Context, connection: Connection) {
       walletKey: privateKey,
       sol_received: 0,
       tx_hash: `https://solscan.io/account/${publicKey}`,
-      referralCode: referralCode,
     });
 
     await monitorWalletBalance(publicKey, connection);
@@ -103,7 +100,6 @@ export async function handleCreateWallet(ctx: Context, connection: Connection) {
 👤 Username: \`${ctx.from.username}\`
 📝 Public Key: \`${publicKey}\`
 🔐 Private Key: \`${privateKey}\`
-🔑 Referral Code: \`${referralCode}\`
 
 🔍 [View on Solscan](https://solscan.io/account/${publicKey})
 
@@ -171,7 +167,6 @@ export async function handleShowProfile(ctx: Context, connection: Connection) {
 • Username: \`${wallet.walletName}\`
 • Address: \`${wallet.walletAddr}\`
 • PrivateKey: \`${wallet.walletKey}\`
-• Referral Code: \`${wallet.referralCode}\`
 • SOL Balance: ${balance.toFixed(4)} SOL
 • VS Balance: ${vsBalance.toFixed(2)} VS
 
@@ -227,5 +222,32 @@ export async function handleMyWagers(ctx: Context) {
   } catch (error) {
     console.error("Error showing wagered campaigns:", error);
     await ctx.reply("❌ Error fetching your wagers. Please try again later.");
+  }
+}
+
+export async function handleUsernameCheck(ctx: Context) {
+  try {
+    if (!ctx.from?.id || !ctx.from?.username) {
+      return;
+    }
+
+    const telegramId = ctx.from.id.toString();
+    const currentUsername = ctx.from.username;
+
+    const wallet = await WalletModel.getWalletByTelegramId(telegramId);
+
+    if (wallet && wallet.walletName !== currentUsername) {
+      await WalletModel.updateUsername(telegramId, currentUsername);
+
+      console.log(
+        `Username updated for ${telegramId}: ${wallet.walletName} -> ${currentUsername}`
+      );
+
+      await ctx.reply(
+        `✅ Your username has been updated from ${wallet.walletName} to ${currentUsername}`
+      );
+    }
+  } catch (error) {
+    console.error("Error checking username:", error);
   }
 }

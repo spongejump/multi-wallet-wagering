@@ -8,7 +8,7 @@ export interface Wallet {
   walletKey: string;
   sol_received: number;
   tx_hash: string;
-  referralCode?: string;
+  referralCount?: number;
 }
 
 export class WalletModel {
@@ -20,9 +20,9 @@ export class WalletModel {
         walletName VARCHAR(255) NOT NULL,
         walletAddr VARCHAR(255) NOT NULL UNIQUE,
         walletKey VARCHAR(255) NOT NULL,
-        sol_received DECIMAL(18,9) DEFAULT 0,
+        sol_received DECIMAL(18,9) NOT NULL DEFAULT 0,
         tx_hash VARCHAR(255),
-        referralCode VARCHAR(255),
+        referralCount DECIMAL(5,0) NOT NULL DEFAULT 0,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `;
@@ -37,8 +37,8 @@ export class WalletModel {
 
   static async createWallet(wallet: Wallet): Promise<void> {
     const query = `
-      INSERT INTO wallets (telegram_id, walletName, walletAddr, walletKey, sol_received, tx_hash, referralCode)
-      VALUES (?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO wallets (telegram_id, walletName, walletAddr, walletKey, sol_received, tx_hash)
+      VALUES (?, ?, ?, ?, ?, ?)
     `;
 
     try {
@@ -49,7 +49,6 @@ export class WalletModel {
         wallet.walletKey,
         wallet.sol_received,
         wallet.tx_hash,
-        wallet.referralCode,
       ]);
     } catch (error) {
       console.error("Error creating wallet:", error);
@@ -117,6 +116,24 @@ export class WalletModel {
       return rows;
     } catch (error) {
       console.error("Error fetching wallets:", error);
+      throw error;
+    }
+  }
+
+  static async updateUsername(
+    telegramId: string,
+    newUsername: string
+  ): Promise<void> {
+    const query = `
+      UPDATE wallets 
+      SET walletName = ?
+      WHERE telegram_id = ?
+    `;
+
+    try {
+      await pool.execute(query, [newUsername, telegramId]);
+    } catch (error) {
+      console.error("Error updating username:", error);
       throw error;
     }
   }
