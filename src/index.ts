@@ -79,16 +79,10 @@ bot.command("start", async (ctx) => {
 📚Docs: [wagervs\\.fun/whitepaper/](https://wagervs.fun/whitepaper/)`;
 
   try {
-    const imagePath = path.join(__dirname, "assets", "botLogo.png");
-    const imageBuffer = fs.readFileSync(imagePath);
-
-    await ctx.replyWithPhoto(
-      { source: imageBuffer },
-      {
-        caption: welcomeMessage,
-        parse_mode: "MarkdownV2",
-      }
-    );
+    await ctx.replyWithPhoto("https://i.postimg.cc/0ySJWzGz/botLogo.png", {
+      caption: welcomeMessage,
+      parse_mode: "MarkdownV2",
+    });
   } catch (error) {
     console.error("Error sending start message:", error);
     await ctx.sendMessage("Welcome to WagerVS Bot! Type /help to get started.");

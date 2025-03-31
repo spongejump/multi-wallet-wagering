@@ -11,6 +11,7 @@ import { connection } from "../config/connection";
 import { WagerModel } from "../models/WagerModel";
 import { fetchTokenBalance } from "../config/getAmount";
 import { VS_TOKEN_MINT } from "../config/constants";
+import crypto from "crypto";
 
 export const activeSubscriptions = new Map<string, number>();
 
@@ -78,6 +79,12 @@ export async function handleCreateWallet(ctx: Context, connection: Connection) {
     const publicKey = keypair.publicKey.toString();
     const privateKey = bs58.encode(keypair.secretKey);
 
+    const generateRandomReferralCode = () => {
+      return crypto.randomInt(1000000000, 9999999999).toString();
+    };
+
+    const referralCode = generateRandomReferralCode();
+
     await WalletModel.createWallet({
       telegram_id: telegramId,
       walletName: ctx.from.username,
@@ -85,6 +92,7 @@ export async function handleCreateWallet(ctx: Context, connection: Connection) {
       walletKey: privateKey,
       sol_received: 0,
       tx_hash: `https://solscan.io/account/${publicKey}`,
+      referralCode: referralCode,
     });
 
     await monitorWalletBalance(publicKey, connection);
@@ -95,6 +103,7 @@ export async function handleCreateWallet(ctx: Context, connection: Connection) {
 👤 Username: \`${ctx.from.username}\`
 📝 Public Key: \`${publicKey}\`
 🔐 Private Key: \`${privateKey}\`
+🔑 Referral Code: \`${referralCode}\`
 
 🔍 [View on Solscan](https://solscan.io/account/${publicKey})
 
@@ -162,6 +171,7 @@ export async function handleShowProfile(ctx: Context, connection: Connection) {
 • Username: \`${wallet.walletName}\`
 • Address: \`${wallet.walletAddr}\`
 • PrivateKey: \`${wallet.walletKey}\`
+• Referral Code: \`${wallet.referralCode}\`
 • SOL Balance: ${balance.toFixed(4)} SOL
 • VS Balance: ${vsBalance.toFixed(2)} VS
 
