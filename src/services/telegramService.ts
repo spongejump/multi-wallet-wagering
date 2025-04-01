@@ -1,11 +1,22 @@
-import { Telegraf } from "telegraf";
+import { Telegraf, Context } from "telegraf";
 import {
   TELEGRAM_BOT_TOKEN,
   TELEGRAM_CHAT_ID,
   THREAD_ID,
 } from "../config/constants";
 
-export const bot = new Telegraf(TELEGRAM_BOT_TOKEN);
+// Define session type for wallet creation only
+interface WalletCreationSession {
+  isCreatingWallet?: boolean;
+  telegramId?: string;
+}
+
+// Extend Context type to include our session
+interface WalletContext extends Context {
+  session: WalletCreationSession;
+}
+
+export const bot = new Telegraf<WalletContext>(TELEGRAM_BOT_TOKEN);
 
 export async function sendTelegramMessage(message: string, photo?: string) {
   if (photo) {

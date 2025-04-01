@@ -26,6 +26,7 @@ import { handleWager, handleWagerButton } from "./controllers/wagerController";
 // import path from "path";
 // import fs from "fs";
 import { usernameMonitor } from "./middleware/usernameMonitor";
+import { handleInviterInput } from "./controllers/walletController";
 
 if (!TELEGRAM_BOT_TOKEN || !TELEGRAM_CHAT_ID || !TOKEN_MINT_ADDRESS) {
   console.error("❌ Missing required environment variables.");
@@ -131,6 +132,12 @@ bot.command("show_profile", async (ctx) => {
 });
 
 bot.command("show_wages", handleMyWagers);
+
+// Handle text messages for wallet creation
+bot.on("text", async (ctx) => {
+  if (ctx.chat.type !== "private") return;
+  await handleInviterInput(ctx, connection);
+});
 
 async function startApp() {
   try {

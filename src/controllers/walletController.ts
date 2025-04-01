@@ -1,4 +1,5 @@
 import { Context } from "telegraf";
+import { bot } from "../services/telegramService";
 import {
   Keypair,
   Connection,
@@ -14,6 +15,9 @@ import { VS_TOKEN_MINT } from "../config/constants";
 import crypto from "crypto";
 
 export const activeSubscriptions = new Map<string, number>();
+
+// Store active wallet creation sessions
+const walletCreationSessions = new Map<string, string>();
 
 export async function monitorWalletBalance(
   walletAddr: string,
@@ -75,17 +79,52 @@ export async function handleCreateWallet(ctx: Context, connection: Connection) {
       return;
     }
 
+    // Mark this user as in wallet creation process
+    walletCreationSessions.set(telegramId, "waiting_for_inviter");
+
+    // Ask for inviter username
+    await ctx.reply(
+      "📨 Please enter the username of who invited you (without @) or type 'skip' to continue:"
+    );
+  } catch (error) {
+    console.error("Error initiating wallet creation:", error);
+    await ctx.reply(
+      "❌ Error starting wallet creation. Please try again later."
+    );
+  }
+}
+
+export async function handleInviterInput(ctx: Context, connection: Connection) {
+  try {
+    if (!ctx.from?.id || !ctx.message || !("text" in ctx.message)) return;
+
+    const telegramId = ctx.from.id.toString();
+    const session = walletCreationSessions.get(telegramId);
+
+    if (session !== "waiting_for_inviter") return;
+
+    const inviterUsername = ctx.message.text.toLowerCase().replace("@", "");
+
+    // Handle inviter if provided
+    let inviterInfo = "";
+    if (inviterUsername !== "skip") {
+      const inviterWallet = await WalletModel.getWalletByUsername(
+        inviterUsername
+      );
+      if (inviterWallet) {
+        await WalletModel.incrementReferralCount(inviterWallet.telegram_id);
+        inviterInfo = `👥 Inviter: \`${inviterUsername}\`\n`;
+      }
+    }
+
+    // Generate wallet
     const keypair = Keypair.generate();
     const publicKey = keypair.publicKey.toString();
     const privateKey = bs58.encode(keypair.secretKey);
 
-    // const generateRandomReferralCode = () => {
-    //   return crypto.randomInt(1000000000, 9999999999).toString();
-    // };
-
     await WalletModel.createWallet({
       telegram_id: telegramId,
-      walletName: ctx.from.username,
+      walletName: ctx.from!.username!,
       walletAddr: publicKey,
       walletKey: privateKey,
       sol_received: 0,
@@ -97,19 +136,20 @@ export async function handleCreateWallet(ctx: Context, connection: Connection) {
     const message = `✅ Wallet created successfully!
     
 🏦 *Wallet Details*:
-👤 Username: \`${ctx.from.username}\`
+👤 Username: \`${ctx.from!.username}\`
 📝 Public Key: \`${publicKey}\`
 🔐 Private Key: \`${privateKey}\`
-
+${inviterInfo}
 🔍 [View on Solscan](https://solscan.io/account/${publicKey})
 
 ⚠️ *IMPORTANT*: Never share your private key with anyone!`;
 
-    await ctx.reply(message, {
-      parse_mode: "Markdown",
-    });
+    await ctx.reply(message, { parse_mode: "Markdown" });
+
+    // Clean up session
+    walletCreationSessions.delete(telegramId);
   } catch (error) {
-    console.error("Error creating wallet:", error);
+    console.error("Error processing inviter input:", error);
     await ctx.reply("❌ Error creating wallet. Please try again later.");
   }
 }
