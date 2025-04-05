@@ -1,5 +1,6 @@
 import { bot } from "./services/telegramService";
 import { connection } from "./config/connection";
+import { Context } from "telegraf";
 import {
   TOKEN_MINT_ADDRESS,
   TELEGRAM_BOT_TOKEN,
@@ -26,6 +27,12 @@ import { handleWager, handleWagerButton } from "./controllers/wagerController";
 // import path from "path";
 // import fs from "fs";
 import { usernameMonitor } from "./middleware/usernameMonitor";
+import { handleInviterInput } from "./controllers/walletController";
+import {
+  handleCreateProfile,
+  handleReferralCodes,
+} from "./controllers/profileController";
+import { handleRewards } from "./controllers/pointController";
 
 if (!TELEGRAM_BOT_TOKEN || !TELEGRAM_CHAT_ID || !TOKEN_MINT_ADDRESS) {
   console.error("❌ Missing required environment variables.");
@@ -103,6 +110,7 @@ bot.command("help", async (ctx) => {
 /wager \\[campaignId\\] \\[$amount\\] \\- Place a wager
 /show\\_profile \\- Show your profile
 /show\\_wages \\- View your wagers
+/referralCodes \\- View your referral statistics and earnings
 /help \\- Show this help message
 
 ⚠️ Some commands are only available in private chat with the bot\\.`;
@@ -131,6 +139,29 @@ bot.command("show_profile", async (ctx) => {
 });
 
 bot.command("show_wages", handleMyWagers);
+
+bot.command("create_profile", async (ctx) => {
+  await handleCreateProfile(ctx);
+});
+
+bot.command("referralCodes", async (ctx) => {
+  if (ctx.chat.type !== "private") {
+    return ctx.reply(
+      "⚠️ This command can only be used in private chat with the bot."
+    );
+  }
+  await handleReferralCodes(ctx);
+});
+
+bot.command("rewards", async (ctx) => {
+  await handleRewards(ctx);
+});
+
+// Handle text messages for wallet creation
+bot.on("text", async (ctx) => {
+  if (ctx.chat.type !== "private") return;
+  await handleInviterInput(ctx, connection);
+});
 
 async function startApp() {
   try {

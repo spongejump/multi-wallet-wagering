@@ -56,6 +56,21 @@ export class WalletModel {
     }
   }
 
+  static async incrementReferralCount(telegram_id: string): Promise<void> {
+    const query = `
+    UPDATE wallets 
+    SET referralCount = referralCount + 1
+    WHERE telegram_id = ?
+  `;
+
+    try {
+      await pool.execute(query, [telegram_id]);
+    } catch (error) {
+      console.error("Error incrementing referral count:", error);
+      throw error;
+    }
+  }
+
   static async getWalletByUsername(username: string): Promise<Wallet | null> {
     const query = "SELECT * FROM wallets WHERE walletName = ?";
     try {
