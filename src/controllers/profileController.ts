@@ -18,33 +18,34 @@ export async function handleCreateProfile(ctx: Context) {
       return;
     }
 
-    // Initialize all required fields with proper default values
     const newProfile: Profile = {
-      wallet_id: "", // This will be linked later
+      wallet_id: "",
       username: ctx.from.username,
-      referral_code: generateReferralCode(ctx.from.username),
-      parent_referral_code: undefined,
+      referral: generateReferralCode(ctx.from.username),
+      parent_referral_code: "", //
       points: 0,
-      default_bet: 0,
-      gift_given: false,
+      defbet: 0,
+      GiftGiven: false,
       allowed_campaign_limit: 3,
       remaining_campaign_limit: 3,
-      user_type: "user",
-      profile_picture: undefined,
+      type: "user",
+      profile_picture: "", //
+      created_at: new Date(),
+      updated_at: new Date(),
     };
 
     await ProfileModel.createProfile(newProfile);
 
     await ctx.reply(
       `✅ Profile created successfully!
-    
+
 👤 *Profile Details*:
-• Username: \`${newProfile.username}\`
-• Referral Code: \`${newProfile.referral_code}\`
+• Username: \`${newProfile.username.replace(/[`]/g, "")}\`
+• Referral Code: \`${newProfile.referral?.replace(/[`]/g, "")}\`
 • Campaign Limit: ${newProfile.allowed_campaign_limit}
 • Points: ${newProfile.points}
 
-Use /show_profile to view your complete profile.`,
+Use /show\\_profile to view your complete profile.`,
       {
         parse_mode: "Markdown",
       }
@@ -72,9 +73,9 @@ export async function handleShowProfile(ctx: Context) {
 
 📝 *Details:*
 • Username: \`${profile.username}\`
-• Referral Code: \`${profile.referral_code}\`
+• Referral Code: \`${profile.referral}\`
 • Points: ${profile.points}
-• Default Bet: ${profile.default_bet}
+• Default Bet: ${profile.defbet}
 • Remaining Campaigns: ${profile.remaining_campaign_limit}/${
       profile.allowed_campaign_limit
     }
@@ -85,8 +86,8 @@ ${
 }
 
 🎮 *Status:*
-• Type: ${profile.user_type}
-• Gift Status: ${profile.gift_given ? "Received ✅" : "Not Received ❌"}`;
+• Type: ${profile.type}
+• Gift Status: ${profile.GiftGiven ? "Received ✅" : "Not Received ❌"}`;
 
     await ctx.reply(message, {
       parse_mode: "Markdown",
@@ -120,17 +121,17 @@ export async function handleUpdateProfile(ctx: Context) {
     }
 
     const [_, field, value] = args;
-    const allowedFields = ["default_bet", "profile_picture"];
+    const allowedFields = ["defbet", "profile_picture"];
 
     if (!allowedFields.includes(field)) {
       await ctx.reply(
-        "❌ Invalid field. You can only update: default_bet, profile_picture"
+        "❌ Invalid field. You can only update: defbet, profile_picture"
       );
       return;
     }
 
     const updates: Partial<Profile> = {
-      [field]: field === "default_bet" ? parseFloat(value) : value,
+      [field]: field === "defbet" ? parseFloat(value) : value,
     };
 
     await ProfileModel.updateProfile(profile.wallet_id, updates);
@@ -156,7 +157,7 @@ export async function handleReferral(ctx: Context) {
 
     const message = `🎯 *Your Referral Information*
 
-Your Referral Code: \`${profile.referral_code}\`
+Your Referral Code: \`${profile.referral}\`
 
 Share this code with others to earn points!
 New users can enter your code when creating their profile.
@@ -177,7 +178,7 @@ Current Points: ${profile.points}`;
 function generateReferralCode(username: string): string {
   const timestamp = Date.now().toString(36);
   const randomStr = Math.random().toString(36).substring(2, 5);
-  return `${username}_${timestamp}${randomStr}`.toUpperCase();
+  return `${username}_${timestamp}${randomStr}`.toLowerCase();
 }
 
 export async function handleLeaderboard(ctx: Context) {
@@ -222,20 +223,16 @@ export async function handleReferralCodes(ctx: Context) {
 
     const allProfiles = await ProfileModel.getAllProfiles();
 
-    console.log(profile.referral_code);
-
     const totalReferrals = allProfiles.filter(
-      (p) => p.parent_referral_code === profile.referral_code
+      (p) => p.parent_referral_code === profile.referral
     ).length;
-
-    console.log(`totalReferrals is ${totalReferrals}`);
 
     const escapeMarkdown = (text: string) => {
       return text.replace(/[_*[\]()~`>#+=|{}.!-]/g, "\\$&");
     };
 
     const websiteUrl = escapeMarkdown(
-      `www.wagervs.fun/${profile.referral_code || ""}`
+      `www.wagervs.fun/${profile.referral || ""}`
     );
 
     const message = `🔗 *Standard Rev Share* 🔗
