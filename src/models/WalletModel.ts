@@ -34,7 +34,7 @@ export class WalletModel {
 
   static async createWallet(wallet: Wallet): Promise<void> {
     const query = `
-      INSERT INTO wallets (walletName, walletAddr, walletKey, sol_received, tx_hash, walletType)
+      INSERT INTO Wallets (walletName, walletAddr, walletKey, sol_received, tx_hash, walletType)
       VALUES (?, ?, ?, ?, ?, ?)
     `;
 
@@ -54,7 +54,7 @@ export class WalletModel {
   }
 
   static async getWalletByUsername(username: string): Promise<Wallet | null> {
-    const query = "SELECT * FROM wallets WHERE walletName = ?";
+    const query = "SELECT * FROM Wallets WHERE walletName = ?";
     try {
       const [rows]: any = await pool.execute(query, [username]);
       return rows[0] || null;
@@ -69,7 +69,7 @@ export class WalletModel {
     balance: number
   ): Promise<void> {
     const query = `
-      UPDATE wallets 
+      UPDATE Wallets 
       SET sol_received = ?
       WHERE walletAddr = ?
     `;
@@ -83,7 +83,7 @@ export class WalletModel {
   }
 
   static async getWalletByAddress(walletAddr: string): Promise<Wallet | null> {
-    const query = "SELECT * FROM wallets WHERE walletAddr = ?";
+    const query = "SELECT * FROM Wallets WHERE walletAddr = ?";
     try {
       const [rows]: any = await pool.execute(query, [walletAddr]);
       return rows[0] || null;
@@ -94,12 +94,12 @@ export class WalletModel {
   }
 
   static async getAllWallets(): Promise<Wallet[]> {
-    const query = "SELECT * FROM wallets";
+    const query = "SELECT * FROM Wallets";
     try {
       const [rows]: any = await pool.execute(query);
       return rows;
     } catch (error) {
-      console.error("Error fetching wallets:", error);
+      console.error("Error fetching Wallets:", error);
       throw error;
     }
   }
@@ -109,7 +109,7 @@ export class WalletModel {
     newUsername: string
   ): Promise<void> {
     const query = `
-      UPDATE wallets 
+      UPDATE Wallets 
       SET walletName = ?
       WHERE walletAddr = ?
     `;
