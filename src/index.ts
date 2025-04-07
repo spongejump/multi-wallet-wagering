@@ -60,6 +60,11 @@ bot.command("buyVS", async (ctx) => {
 });
 
 bot.command("show_wallet", async (ctx) => {
+  if (ctx.chat.type !== "private") {
+    return ctx.reply(
+      "⚠️ This command can only be used in private chat with the bot."
+    );
+  }
   await handleShowWallet(ctx, connection);
 });
 

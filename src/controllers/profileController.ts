@@ -58,6 +58,7 @@ export async function handleCreateProfile(ctx: Context) {
 
 👤 *Profile Details*:
 • Username: \`${newProfile.username.replace(/[`]/g, "")}\`
+• Wallet Address: \`${newProfile.wallet_id.replace(/[`]/g, "")}\`
 • Referral Code: \`${newProfile.referral?.replace(/[`]/g, "")}\`
 • Campaign Limit: ${newProfile.allowed_campaign_limit}
 • Points: ${newProfile.points}
