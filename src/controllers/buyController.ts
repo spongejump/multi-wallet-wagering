@@ -136,7 +136,7 @@ export async function handleBuyVS(ctx: Context) {
     const userWallet = await WalletModel.getWalletByUsername(username);
     if (!userWallet) {
       return ctx.reply(
-        "❌ You don't have a wallet. Please create one using /create_wallet"
+        "❌ You don't have a wallet. Please create one using /create_profile"
       );
     }
     const userKeypair = Keypair.fromSecretKey(

@@ -89,7 +89,7 @@ export async function handleShowWallet(ctx: Context, connection: Connection) {
 
     if (!wallet) {
       await ctx.reply(
-        "❌ You don't have a wallet yet. Create one using /create_wallet"
+        "❌ You don't have a wallet yet. Create one using /create_profile"
       );
       return;
     }
@@ -135,7 +135,7 @@ export async function handleMyWagers(ctx: Context) {
     const wallet = await WalletModel.getWalletByUsername(userName);
     if (!wallet) {
       await ctx.reply(
-        "❌ You don't have a wallet yet. Create one using /create_wallet"
+        "❌ You don't have a wallet yet. Create one using /create_profile"
       );
       return;
     }

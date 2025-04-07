@@ -57,9 +57,9 @@ export async function handleCreateProfile(ctx: Context) {
       `✅ Profile created successfully!
 
 👤 *Profile Details*:
-• Username: \`${newProfile.username.replace(/[`]/g, "")}\`
-• Wallet Address: \`${newProfile.wallet_id.replace(/[`]/g, "")}\`
-• Referral Code: \`${newProfile.referral?.replace(/[`]/g, "")}\`
+• Username: \`${ctx.from.username}\`
+• Wallet_ID: \`${newProfile.wallet_id.replace(/`/g, "'")}\`
+• Referral Code: \`${newProfile.referral?.replace(/`/g, "'")}\`
 • Campaign Limit: ${newProfile.allowed_campaign_limit}
 • Points: ${newProfile.points}
 
@@ -76,11 +76,12 @@ Use /show\\_profile to view your complete profile.`,
 
 export async function handleShowProfile(ctx: Context) {
   try {
-    if (!ctx.from?.id) {
+    if (!ctx.from?.id || !ctx.from?.username) {
       await ctx.reply("❌ Could not identify user.");
       return;
     }
 
+    const username = ctx.from.username;
     const profile = await ProfileModel.getProfileByUsername(
       ctx.from.id.toString()
     );
@@ -92,8 +93,9 @@ export async function handleShowProfile(ctx: Context) {
     const message = `👤 *Your Profile*
 
 📝 *Details:*
-• Username: \`${profile.username}\`
-• Referral Code: \`${ctx.from.username}\`
+• Username: \`${username.replace(/`/g, "'")}\`
+• Wallet ID: \`${profile.wallet_id.replace(/`/g, "'")}\`
+• Referral Code: \`${username.replace(/`/g, "'")}\`
 • Points: ${profile.points}
 • Default Bet: ${profile.defbet}
 • Remaining Campaigns: ${profile.remaining_campaign_limit}/${
@@ -101,13 +103,13 @@ export async function handleShowProfile(ctx: Context) {
     }
 ${
   profile.parent_referral_code
-    ? `• Invited By: \`${profile.parent_referral_code}\``
+    ? `• Invited By: \`${profile.parent_referral_code.replace(/`/g, "'")}\``
     : ""
 }
 
 🎮 *Status:*
 • Type: ${profile.type}
-• Gift Status: ${profile.GiftGiven ? "Received ✅" : "Not Received ❌"}`;
+• Gift Status: ${profile.GiftGiven ? "Received ✅" : "Not Received"}`;
 
     await ctx.reply(message, {
       parse_mode: "Markdown",
@@ -254,7 +256,11 @@ export async function handleReferralCodes(ctx: Context) {
     ).length;
 
     const escapeMarkdown = (text: string) => {
-      return text.replace(/[_*[\]()~`>#+=|{}.!-]/g, "\\$&");
+      return text.toString().replace(/[_*[\]()~`>#+=|{}.!-]/g, "\\$&");
+    };
+
+    const formatNumber = (num: number) => {
+      return num.toFixed(2).replace(".", "\\.");
     };
 
     const websiteUrl = escapeMarkdown(
