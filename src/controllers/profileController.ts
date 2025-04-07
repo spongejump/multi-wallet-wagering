@@ -97,7 +97,7 @@ export async function handleShowProfile(ctx: Context) {
 📝 *Details:*
 • Username: \`${username.replace(/`/g, "'")}\`
 • Wallet ID: \`${profile.wallet_id.replace(/`/g, "'")}\`
-• Referral Code: \`${username.replace(/`/g, "'")}\`
+• Referral Code: \`${profile.referral?.replace(/`/g, "'")}\`
 • Points: ${profile.points}
 • Default Bet: ${profile.defbet}
 • Remaining Campaigns: ${profile.remaining_campaign_limit}/${
