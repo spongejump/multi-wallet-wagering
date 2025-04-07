@@ -1,5 +1,4 @@
 import { Context } from "telegraf";
-import { bot } from "../services/telegramService";
 import { Connection, PublicKey, LAMPORTS_PER_SOL } from "@solana/web3.js";
 import { WalletModel } from "../models/WalletModel";
 import { WagerModel } from "../models/WagerModel";
@@ -72,7 +71,7 @@ export async function startAllWalletMonitoring(connection: Connection) {
   }
 }
 
-export async function handleShowProfile(ctx: Context, connection: Connection) {
+export async function handleShowWallet(ctx: Context, connection: Connection) {
   try {
     if (!ctx.from?.id || !ctx.from?.username) {
       await ctx.reply("❌ Could not identify user.");

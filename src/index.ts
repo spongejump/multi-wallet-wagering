@@ -12,7 +12,7 @@ import { startTracking } from "./controllers/tokenTracker";
 import {
   startAllWalletMonitoring,
   activeSubscriptions,
-  // handleShowProfile,
+  handleShowWallet,
   handleMyWagers,
 } from "./controllers/walletController";
 import { WalletModel } from "./models/WalletModel";
@@ -59,6 +59,10 @@ bot.command("buyVS", async (ctx) => {
   await handleBuyVS(ctx);
 });
 
+bot.command("show_wallet", async (ctx) => {
+  await handleShowWallet(ctx, connection);
+});
+
 bot.command("start", async (ctx) => {
   const welcomeMessage = `*WagerVS Bot* is the ultimate PVP experience in web3\\. 
 
@@ -97,6 +101,7 @@ bot.command("help", async (ctx) => {
 /allCampaigns \\- View all campaigns
 /activeCampaigns \\- View active campaigns
 /wager \\[campaignId\\] \\[$amount\\] \\- Place a wager
+/show\\_wallet \\- Show your wallet \\(private chat only\\)
 /show\\_profile \\- Show your profile
 /show\\_wages \\- View your wagers
 /referralCodes \\- View your referral statistics and earnings
