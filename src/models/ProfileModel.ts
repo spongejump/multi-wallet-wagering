@@ -6,6 +6,7 @@ export interface Profile {
   wallet_id: string;
   created_at?: Date;
   updated_at?: Date;
+  telegram_id: string;
   username: string;
   referral?: string;
   parent_referral_code?: string;
@@ -26,6 +27,7 @@ export class ProfileModel {
         wallet_id VARCHAR(255) UNIQUE,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        telegram_id VARCHAR(255) UNIQUE,
         username VARCHAR(50) UNIQUE,
         referral VARCHAR(255) UNIQUE,
         parent_referral_code VARCHAR(255),
@@ -49,15 +51,16 @@ export class ProfileModel {
   static async createProfile(profile: Profile): Promise<void> {
     const query = `
       INSERT INTO profiles (
-        wallet_id, username, referral, parent_referral_code,
+        wallet_id, telegram_id, username, referral, parent_referral_code,
         points, defbet, GiftGiven, allowed_campaign_limit,
         remaining_campaign_limit, type, profile_picture
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `;
 
     try {
       await pool.execute(query, [
         profile.wallet_id,
+        profile.telegram_id,
         profile.username,
         profile.referral,
         profile.parent_referral_code,
@@ -71,6 +74,19 @@ export class ProfileModel {
       ]);
     } catch (error) {
       console.error("Error creating profile:", error);
+      throw error;
+    }
+  }
+
+  static async getProfileByTelegramId(
+    telegram_id: string
+  ): Promise<Profile | null> {
+    const query = "SELECT * FROM profiles WHERE telegram_id = ?";
+    try {
+      const [rows]: any = await pool.execute(query, [telegram_id]);
+      return rows[0] || null;
+    } catch (error) {
+      console.error("Error fetching profile:", error);
       throw error;
     }
   }

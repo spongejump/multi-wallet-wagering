@@ -3,6 +3,7 @@ import { Keypair } from "@solana/web3.js";
 import { ProfileModel, Profile } from "../models/ProfileModel";
 import bs58 from "bs58";
 import { WalletModel } from "../models/WalletModel";
+import crypto from "crypto";
 
 export async function handleCreateProfile(ctx: Context) {
   try {
@@ -13,7 +14,7 @@ export async function handleCreateProfile(ctx: Context) {
       return;
     }
 
-    const existingProfile = await ProfileModel.getProfileByUsername(
+    const existingProfile = await ProfileModel.getProfileByTelegramId(
       ctx.from.id.toString()
     );
     if (existingProfile) {
@@ -37,8 +38,9 @@ export async function handleCreateProfile(ctx: Context) {
 
     const newProfile: Profile = {
       wallet_id: publicKey,
-      username: ctx.from.id.toString(),
-      referral: generateReferralCode(ctx.from.username),
+      telegram_id: ctx.from.id.toString(),
+      username: ctx.from.username,
+      referral: generateRandomReferralCode(),
       parent_referral_code: "", //
       points: 0,
       defbet: 0,
@@ -57,8 +59,8 @@ export async function handleCreateProfile(ctx: Context) {
       `✅ Profile created successfully!
 
 👤 *Profile Details*:
-• Username: \`${ctx.from.username}\`
-• Wallet_ID: \`${newProfile.wallet_id.replace(/`/g, "'")}\`
+• Username: \`${ctx.from.username.replace(/`/g, "'")}\`
+• Wallet ID: \`${newProfile.wallet_id.replace(/`/g, "'")}\`
 • Referral Code: \`${newProfile.referral?.replace(/`/g, "'")}\`
 • Campaign Limit: ${newProfile.allowed_campaign_limit}
 • Points: ${newProfile.points}
@@ -82,7 +84,7 @@ export async function handleShowProfile(ctx: Context) {
     }
 
     const username = ctx.from.username;
-    const profile = await ProfileModel.getProfileByUsername(
+    const profile = await ProfileModel.getProfileByTelegramId(
       ctx.from.id.toString()
     );
     if (!profile) {
@@ -127,7 +129,7 @@ export async function handleUpdateProfile(ctx: Context) {
       return;
     }
 
-    const profile = await ProfileModel.getProfileByUsername(
+    const profile = await ProfileModel.getProfileByTelegramId(
       ctx.from.id.toString()
     );
     if (!profile) {
@@ -173,7 +175,7 @@ export async function handleReferral(ctx: Context) {
       return;
     }
 
-    const profile = await ProfileModel.getProfileByUsername(
+    const profile = await ProfileModel.getProfileByTelegramId(
       ctx.from.id.toString()
     );
     if (!profile) {
@@ -201,11 +203,9 @@ Current Points: ${profile.points}`;
   }
 }
 
-function generateReferralCode(username: string): string {
-  const timestamp = Date.now().toString(36);
-  const randomStr = Math.random().toString(36).substring(2, 5);
-  return `${username}_${timestamp}${randomStr}`.toLowerCase();
-}
+const generateRandomReferralCode = () => {
+  return crypto.randomInt(1000000000, 9999999999).toString(); // Generates a 10-digit number
+};
 
 export async function handleLeaderboard(ctx: Context) {
   try {
@@ -241,7 +241,7 @@ export async function handleReferralCodes(ctx: Context) {
       return;
     }
 
-    const profile = await ProfileModel.getProfileByUsername(
+    const profile = await ProfileModel.getProfileByTelegramId(
       ctx.from.id.toString()
     );
     if (!profile) {
