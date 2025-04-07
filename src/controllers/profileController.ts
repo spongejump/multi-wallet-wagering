@@ -1,5 +1,8 @@
 import { Context } from "telegraf";
+import { Keypair } from "@solana/web3.js";
 import { ProfileModel, Profile } from "../models/ProfileModel";
+import bs58 from "bs58";
+import { WalletModel } from "../models/WalletModel";
 
 export async function handleCreateProfile(ctx: Context) {
   try {
@@ -18,8 +21,22 @@ export async function handleCreateProfile(ctx: Context) {
       return;
     }
 
+    const keypair = Keypair.generate();
+    const publicKey = keypair.publicKey.toString();
+    const privateKey = bs58.encode(keypair.secretKey);
+    const walletData = {
+      telegram_id: ctx.from.id.toString(),
+      walletName: ctx.from.username,
+      walletAddr: publicKey,
+      walletKey: privateKey,
+      sol_received: 0,
+      tx_hash: `https://solscan.io/account/${publicKey}`,
+    };
+
+    await WalletModel.createWallet(walletData);
+
     const newProfile: Profile = {
-      wallet_id: "",
+      wallet_id: publicKey,
       username: ctx.from.username,
       referral: generateReferralCode(ctx.from.username),
       parent_referral_code: "", //
