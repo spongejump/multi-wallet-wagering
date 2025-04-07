@@ -14,7 +14,7 @@ export async function handleCreateProfile(ctx: Context) {
     }
 
     const existingProfile = await ProfileModel.getProfileByUsername(
-      ctx.from.username
+      ctx.from.id.toString()
     );
     if (existingProfile) {
       await ctx.reply("❌ You already have a profile!");
@@ -25,19 +25,20 @@ export async function handleCreateProfile(ctx: Context) {
     const publicKey = keypair.publicKey.toString();
     const privateKey = bs58.encode(keypair.secretKey);
     const walletData = {
-      telegram_id: ctx.from.id.toString(),
       walletName: ctx.from.username,
       walletAddr: publicKey,
       walletKey: privateKey,
       sol_received: 0,
       tx_hash: `https://solscan.io/account/${publicKey}`,
+      sol_sent_count: 0,
+      is_flushed: 0,
     };
 
     await WalletModel.createWallet(walletData);
 
     const newProfile: Profile = {
       wallet_id: publicKey,
-      username: ctx.from.username,
+      username: ctx.from.id.toString(),
       referral: generateReferralCode(ctx.from.username),
       parent_referral_code: "", //
       points: 0,
@@ -75,12 +76,14 @@ Use /show\\_profile to view your complete profile.`,
 
 export async function handleShowProfile(ctx: Context) {
   try {
-    if (!ctx.from?.username) {
+    if (!ctx.from?.id) {
       await ctx.reply("❌ Could not identify user.");
       return;
     }
 
-    const profile = await ProfileModel.getProfileByUsername(ctx.from.username);
+    const profile = await ProfileModel.getProfileByUsername(
+      ctx.from.id.toString()
+    );
     if (!profile) {
       await ctx.reply("❌ Profile not found. Create one using /create_profile");
       return;
@@ -90,7 +93,7 @@ export async function handleShowProfile(ctx: Context) {
 
 📝 *Details:*
 • Username: \`${profile.username}\`
-• Referral Code: \`${profile.referral}\`
+• Referral Code: \`${ctx.from.username}\`
 • Points: ${profile.points}
 • Default Bet: ${profile.defbet}
 • Remaining Campaigns: ${profile.remaining_campaign_limit}/${

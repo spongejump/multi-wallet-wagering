@@ -1,6 +1,6 @@
 import { Context } from "telegraf";
 import { PointsHistoryModel } from "../models/pointsModel";
-import { WalletModel } from "../models/WalletModel";
+import { ProfileModel } from "../models/ProfileModel";
 
 export async function handleRewards(ctx: Context) {
   try {
@@ -10,23 +10,23 @@ export async function handleRewards(ctx: Context) {
     }
 
     const telegramId = ctx.from.id.toString();
-    const wallet = await WalletModel.getWalletByTelegramId(telegramId);
+    const profile = await ProfileModel.getProfileByUsername(telegramId);
 
-    if (!wallet) {
+    if (!profile) {
       await ctx.reply(
-        "❌ You don't have a wallet yet. Create one using /create_wallet"
+        "❌ You don't have a profile yet. Create one using /create_profile"
       );
       return;
     }
 
     const referralBonus = await PointsHistoryModel.getReferralBonusPoints(
-      wallet.walletAddr
+      profile.wallet_id
     );
     const referredBonus = await PointsHistoryModel.getReferredBonusPoints(
-      wallet.walletAddr
+      profile.wallet_id
     );
     const wagerBonus = await PointsHistoryModel.getReferralWagerBonusPoints(
-      wallet.walletAddr
+      profile.wallet_id
     );
 
     const totalPoints = referralBonus + referredBonus + wagerBonus;

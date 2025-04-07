@@ -1,29 +1,23 @@
 import { Context } from "telegraf";
 import { bot } from "../services/telegramService";
-import {
-  Keypair,
-  Connection,
-  PublicKey,
-  LAMPORTS_PER_SOL,
-} from "@solana/web3.js";
+import { Connection, PublicKey, LAMPORTS_PER_SOL } from "@solana/web3.js";
 import { WalletModel } from "../models/WalletModel";
-import bs58 from "bs58";
-import { connection } from "../config/connection";
 import { WagerModel } from "../models/WagerModel";
 import { fetchTokenBalance } from "../config/getAmount";
 import { VS_TOKEN_MINT } from "../config/constants";
-import crypto from "crypto";
 
 export const activeSubscriptions = new Map<string, number>();
-
-// Store active wallet creation sessions
-const walletCreationSessions = new Map<string, string>();
 
 export async function monitorWalletBalance(
   walletAddr: string,
   connection: Connection
 ) {
   try {
+    if (!walletAddr) {
+      console.error("Cannot monitor wallet: wallet address is undefined");
+      return;
+    }
+
     if (activeSubscriptions.has(walletAddr)) {
       console.log(`Wallet ${walletAddr} is already being monitored`);
       return;
@@ -61,99 +55,6 @@ export async function monitorWalletBalance(
   }
 }
 
-export async function handleCreateWallet(ctx: Context, connection: Connection) {
-  try {
-    if (!ctx.from?.username || !ctx.from?.id) {
-      await ctx.reply(
-        "❌ You must have a Telegram username to create a wallet."
-      );
-      return;
-    }
-
-    const telegramId = ctx.from.id.toString();
-    console.log(`Creating wallet for Telegram ID: ${telegramId}`);
-
-    const existingWallet = await WalletModel.getWalletByTelegramId(telegramId);
-    if (existingWallet) {
-      await ctx.reply("❌ You already have a wallet registered!");
-      return;
-    }
-
-    // Mark this user as in wallet creation process
-    walletCreationSessions.set(telegramId, "waiting_for_inviter");
-
-    // Ask for inviter username
-    await ctx.reply(
-      "📨 Please enter the username of who invited you (without @) or type 'skip' to continue:"
-    );
-  } catch (error) {
-    console.error("Error initiating wallet creation:", error);
-    await ctx.reply(
-      "❌ Error starting wallet creation. Please try again later."
-    );
-  }
-}
-
-export async function handleInviterInput(ctx: Context, connection: Connection) {
-  try {
-    if (!ctx.from?.id || !ctx.message || !("text" in ctx.message)) return;
-
-    const telegramId = ctx.from.id.toString();
-    const session = walletCreationSessions.get(telegramId);
-
-    if (session !== "waiting_for_inviter") return;
-
-    const inviterUsername = ctx.message.text.toLowerCase().replace("@", "");
-
-    // Handle inviter if provided
-    let inviterInfo = "";
-    if (inviterUsername !== "skip") {
-      const inviterWallet = await WalletModel.getWalletByUsername(
-        inviterUsername
-      );
-      if (inviterWallet) {
-        await WalletModel.incrementReferralCount(inviterWallet.telegram_id);
-        inviterInfo = `👥 Inviter: \`${inviterUsername}\`\n`;
-      }
-    }
-
-    // Generate wallet
-    const keypair = Keypair.generate();
-    const publicKey = keypair.publicKey.toString();
-    const privateKey = bs58.encode(keypair.secretKey);
-
-    await WalletModel.createWallet({
-      telegram_id: telegramId,
-      walletName: ctx.from!.username!,
-      walletAddr: publicKey,
-      walletKey: privateKey,
-      sol_received: 0,
-      tx_hash: `https://solscan.io/account/${publicKey}`,
-    });
-
-    await monitorWalletBalance(publicKey, connection);
-
-    const message = `✅ Wallet created successfully!
-    
-🏦 *Wallet Details*:
-👤 Username: \`${ctx.from!.username}\`
-📝 Public Key: \`${publicKey}\`
-🔐 Private Key: \`${privateKey}\`
-${inviterInfo}
-🔍 [View on Solscan](https://solscan.io/account/${publicKey})
-
-⚠️ *IMPORTANT*: Never share your private key with anyone!`;
-
-    await ctx.reply(message, { parse_mode: "Markdown" });
-
-    // Clean up session
-    walletCreationSessions.delete(telegramId);
-  } catch (error) {
-    console.error("Error processing inviter input:", error);
-    await ctx.reply("❌ Error creating wallet. Please try again later.");
-  }
-}
-
 export async function startAllWalletMonitoring(connection: Connection) {
   try {
     for (const [walletAddr, subscriptionId] of activeSubscriptions) {
@@ -162,13 +63,10 @@ export async function startAllWalletMonitoring(connection: Connection) {
     activeSubscriptions.clear();
 
     const wallets = await WalletModel.getAllWallets();
-    console.log(`Found ${wallets.length} wallets to monitor`);
 
     for (const wallet of wallets) {
       await monitorWalletBalance(wallet.walletAddr, connection);
     }
-
-    console.log(`Started monitoring ${wallets.length} wallets`);
   } catch (error) {
     console.error("Error starting wallet monitoring:", error);
   }
@@ -176,14 +74,19 @@ export async function startAllWalletMonitoring(connection: Connection) {
 
 export async function handleShowProfile(ctx: Context, connection: Connection) {
   try {
-    if (!ctx.from?.id) {
+    if (!ctx.from?.id || !ctx.from?.username) {
       await ctx.reply("❌ Could not identify user.");
       return;
     }
 
-    const telegramId = ctx.from.id.toString();
+    const userName = ctx.from.username;
 
-    const wallet = await WalletModel.getWalletByTelegramId(telegramId);
+    if (!userName) {
+      await ctx.reply("❌ Could not identify your username.");
+      return;
+    }
+
+    const wallet = await WalletModel.getWalletByUsername(userName);
 
     if (!wallet) {
       await ctx.reply(
@@ -223,14 +126,14 @@ export async function handleShowProfile(ctx: Context, connection: Connection) {
 
 export async function handleMyWagers(ctx: Context) {
   try {
-    if (!ctx.from?.id) {
+    if (!ctx.from?.id || !ctx.from?.username) {
       await ctx.reply("❌ Could not identify user.");
       return;
     }
 
-    const wallet = await WalletModel.getWalletByTelegramId(
-      ctx.from.id.toString()
-    );
+    const userName = ctx.from.username;
+
+    const wallet = await WalletModel.getWalletByUsername(userName);
     if (!wallet) {
       await ctx.reply(
         "❌ You don't have a wallet yet. Create one using /create_wallet"
@@ -262,32 +165,5 @@ export async function handleMyWagers(ctx: Context) {
   } catch (error) {
     console.error("Error showing wagered campaigns:", error);
     await ctx.reply("❌ Error fetching your wagers. Please try again later.");
-  }
-}
-
-export async function handleUsernameCheck(ctx: Context) {
-  try {
-    if (!ctx.from?.id || !ctx.from?.username) {
-      return;
-    }
-
-    const telegramId = ctx.from.id.toString();
-    const currentUsername = ctx.from.username;
-
-    const wallet = await WalletModel.getWalletByTelegramId(telegramId);
-
-    if (wallet && wallet.walletName !== currentUsername) {
-      await WalletModel.updateUsername(telegramId, currentUsername);
-
-      console.log(
-        `Username updated for ${telegramId}: ${wallet.walletName} -> ${currentUsername}`
-      );
-
-      await ctx.reply(
-        `✅ Your username has been updated from ${wallet.walletName} to ${currentUsername}`
-      );
-    }
-  } catch (error) {
-    console.error("Error checking username:", error);
   }
 }

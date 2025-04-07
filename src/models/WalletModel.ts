@@ -1,29 +1,28 @@
 import { pool } from "../config/database";
 
 export interface Wallet {
-  id?: number;
-  telegram_id: string;
+  walletID?: number;
   walletName: string;
   walletAddr: string;
   walletKey: string;
   sol_received: number;
   tx_hash: string;
-  referralCount?: number;
+  sol_sent_count: number;
+  is_flushed: number;
 }
 
 export class WalletModel {
   static async createTable() {
     const query = `
-      CREATE TABLE IF NOT EXISTS wallets (
-        id INT AUTO_INCREMENT PRIMARY KEY,
-        telegram_id VARCHAR(255) NOT NULL UNIQUE,
+      CREATE TABLE IF NOT EXISTS Wallets (
+        walletID INT AUTO_INCREMENT PRIMARY KEY,
         walletName VARCHAR(255) NOT NULL,
         walletAddr VARCHAR(255) NOT NULL UNIQUE,
-        walletKey VARCHAR(255) NOT NULL,
+        walletKey text NOT NULL,
         sol_received DECIMAL(18,9) NOT NULL DEFAULT 0,
-        tx_hash VARCHAR(255),
-        referralCount DECIMAL(5,0) NOT NULL DEFAULT 0,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        tx_hash text,
+        sol_sent_count INT,
+        is_flushed INT
       )
     `;
 
@@ -37,36 +36,22 @@ export class WalletModel {
 
   static async createWallet(wallet: Wallet): Promise<void> {
     const query = `
-      INSERT INTO wallets (telegram_id, walletName, walletAddr, walletKey, sol_received, tx_hash)
-      VALUES (?, ?, ?, ?, ?, ?)
+      INSERT INTO wallets (walletName, walletAddr, walletKey, sol_received, tx_hash, sol_sent_count, is_flushed)
+      VALUES (?, ?, ?, ?, ?, ?, ?)
     `;
 
     try {
       await pool.execute(query, [
-        wallet.telegram_id,
         wallet.walletName,
         wallet.walletAddr,
         wallet.walletKey,
         wallet.sol_received,
         wallet.tx_hash,
+        wallet.sol_sent_count,
+        wallet.is_flushed,
       ]);
     } catch (error) {
       console.error("Error creating wallet:", error);
-      throw error;
-    }
-  }
-
-  static async incrementReferralCount(telegram_id: string): Promise<void> {
-    const query = `
-    UPDATE wallets 
-    SET referralCount = referralCount + 1
-    WHERE telegram_id = ?
-  `;
-
-    try {
-      await pool.execute(query, [telegram_id]);
-    } catch (error) {
-      console.error("Error incrementing referral count:", error);
       throw error;
     }
   }
@@ -75,19 +60,6 @@ export class WalletModel {
     const query = "SELECT * FROM wallets WHERE walletName = ?";
     try {
       const [rows]: any = await pool.execute(query, [username]);
-      return rows[0] || null;
-    } catch (error) {
-      console.error("Error fetching wallet:", error);
-      throw error;
-    }
-  }
-
-  static async getWalletByTelegramId(
-    telegram_id: string
-  ): Promise<Wallet | null> {
-    const query = "SELECT * FROM wallets WHERE telegram_id = ?";
-    try {
-      const [rows]: any = await pool.execute(query, [telegram_id]);
       return rows[0] || null;
     } catch (error) {
       console.error("Error fetching wallet:", error);
@@ -142,7 +114,7 @@ export class WalletModel {
     const query = `
       UPDATE wallets 
       SET walletName = ?
-      WHERE telegram_id = ?
+      WHERE walletAddr = ?
     `;
 
     try {

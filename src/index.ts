@@ -10,10 +10,9 @@ import {
 import { startTracking } from "./controllers/tokenTracker";
 
 import {
-  handleCreateWallet,
   startAllWalletMonitoring,
   activeSubscriptions,
-  handleShowProfile,
+  // handleShowProfile,
   handleMyWagers,
 } from "./controllers/walletController";
 import { WalletModel } from "./models/WalletModel";
@@ -27,9 +26,9 @@ import { handleWager, handleWagerButton } from "./controllers/wagerController";
 // import path from "path";
 // import fs from "fs";
 import { usernameMonitor } from "./middleware/usernameMonitor";
-import { handleInviterInput } from "./controllers/walletController";
 import {
   handleCreateProfile,
+  handleShowProfile,
   handleReferralCodes,
 } from "./controllers/profileController";
 import { handleRewards } from "./controllers/pointController";
@@ -50,16 +49,6 @@ async function initializeDatabase() {
 }
 
 bot.use(usernameMonitor);
-
-bot.command("create_wallet", async (ctx) => {
-  if (ctx.chat.type !== "private") {
-    return ctx.reply(
-      "⚠️ This command can only be used in private chat with the bot."
-    );
-  }
-
-  await handleCreateWallet(ctx, connection);
-});
 
 bot.command("buyVS", async (ctx) => {
   if (ctx.chat.type !== "private") {
@@ -135,7 +124,7 @@ bot.action(/^wager_(left|right)_\d+$/, async (ctx) => {
 });
 
 bot.command("show_profile", async (ctx) => {
-  await handleShowProfile(ctx, connection);
+  await handleShowProfile(ctx);
 });
 
 bot.command("show_wages", handleMyWagers);
@@ -155,12 +144,6 @@ bot.command("referralCodes", async (ctx) => {
 
 bot.command("rewards", async (ctx) => {
   await handleRewards(ctx);
-});
-
-// Handle text messages for wallet creation
-bot.on("text", async (ctx) => {
-  if (ctx.chat.type !== "private") return;
-  await handleInviterInput(ctx, connection);
 });
 
 async function startApp() {
