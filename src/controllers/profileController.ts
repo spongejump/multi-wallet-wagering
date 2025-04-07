@@ -30,8 +30,7 @@ export async function handleCreateProfile(ctx: Context) {
       walletKey: privateKey,
       sol_received: 0,
       tx_hash: `https://solscan.io/account/${publicKey}`,
-      sol_sent_count: 0,
-      is_flushed: 0,
+      walletType: "telegram",
     };
 
     await WalletModel.createWallet(walletData);

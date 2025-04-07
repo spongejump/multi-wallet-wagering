@@ -7,8 +7,7 @@ export interface Wallet {
   walletKey: string;
   sol_received: number;
   tx_hash: string;
-  sol_sent_count: number;
-  is_flushed: number;
+  walletType: string;
 }
 
 export class WalletModel {
@@ -21,8 +20,7 @@ export class WalletModel {
         walletKey text NOT NULL,
         sol_received DECIMAL(18,9) NOT NULL DEFAULT 0,
         tx_hash text,
-        sol_sent_count INT,
-        is_flushed INT
+        walletType VARCHAR(255) NOT NULL
       )
     `;
 
@@ -36,8 +34,8 @@ export class WalletModel {
 
   static async createWallet(wallet: Wallet): Promise<void> {
     const query = `
-      INSERT INTO wallets (walletName, walletAddr, walletKey, sol_received, tx_hash, sol_sent_count, is_flushed)
-      VALUES (?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO wallets (walletName, walletAddr, walletKey, sol_received, tx_hash, walletType)
+      VALUES (?, ?, ?, ?, ?, ?)
     `;
 
     try {
@@ -47,8 +45,7 @@ export class WalletModel {
         wallet.walletKey,
         wallet.sol_received,
         wallet.tx_hash,
-        wallet.sol_sent_count,
-        wallet.is_flushed,
+        wallet.walletType,
       ]);
     } catch (error) {
       console.error("Error creating wallet:", error);
