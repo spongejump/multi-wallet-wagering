@@ -119,12 +119,14 @@ ${
 
 export async function handleUpdateProfile(ctx: Context) {
   try {
-    if (!ctx.from?.username) {
+    if (!ctx.from?.id) {
       await ctx.reply("❌ Could not identify user.");
       return;
     }
 
-    const profile = await ProfileModel.getProfileByUsername(ctx.from.username);
+    const profile = await ProfileModel.getProfileByUsername(
+      ctx.from.id.toString()
+    );
     if (!profile) {
       await ctx.reply("❌ Profile not found. Create one using /create_profile");
       return;
@@ -163,12 +165,14 @@ export async function handleUpdateProfile(ctx: Context) {
 
 export async function handleReferral(ctx: Context) {
   try {
-    if (!ctx.from?.username) {
+    if (!ctx.from?.id) {
       await ctx.reply("❌ Could not identify user.");
       return;
     }
 
-    const profile = await ProfileModel.getProfileByUsername(ctx.from.username);
+    const profile = await ProfileModel.getProfileByUsername(
+      ctx.from.id.toString()
+    );
     if (!profile) {
       await ctx.reply("❌ Profile not found. Create one using /create_profile");
       return;
@@ -229,12 +233,14 @@ export async function handleLeaderboard(ctx: Context) {
 
 export async function handleReferralCodes(ctx: Context) {
   try {
-    if (!ctx.from?.username) {
+    if (!ctx.from?.id) {
       await ctx.reply("❌ Could not identify user.");
       return;
     }
 
-    const profile = await ProfileModel.getProfileByUsername(ctx.from.username);
+    const profile = await ProfileModel.getProfileByUsername(
+      ctx.from.id.toString()
+    );
     if (!profile) {
       await ctx.reply("❌ Profile not found. Create one using /create_profile");
       return;
