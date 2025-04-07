@@ -103,7 +103,7 @@ bot.command("help", async (ctx) => {
   const helpMessage = `
 🤖 *Available Commands:*
 
-/create\\_wallet \\- Create a new wallet \\(private chat only\\)
+/create\\_profile \\- Create a new profile \\(private chat only\\)
 /buyVS \\[SOL amount\\] \\- Buy VS tokens \\(private chat only\\)
 /allCampaigns \\- View all campaigns
 /activeCampaigns \\- View active campaigns
