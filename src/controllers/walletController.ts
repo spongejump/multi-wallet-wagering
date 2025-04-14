@@ -80,16 +80,13 @@ export async function startAllWalletMonitoring(connection: Connection) {
 export async function handleShowWallet(ctx: Context, connection: Connection) {
   try {
     if (!ctx.from?.id || !ctx.from?.username) {
-      console.log("[handleShowWallet] Missing ctx.from info");
       await ctx.reply("❌ Could not identify user.");
       return;
     }
 
     const userName = ctx.from.username.toLowerCase();
-    console.log(`[WalletModel] Looking up wallet for username: ${userName}`);
 
     const wallet = await WalletModel.getWalletByUsername(userName);
-    console.log("[handleShowWallet] Wallet lookup result:", wallet);
 
     if (!wallet) {
       console.log(`[handleShowWallet] No wallet found for ${userName}`);
@@ -99,12 +96,7 @@ export async function handleShowWallet(ctx: Context, connection: Connection) {
       return;
     }
 
-    const solanaRegex = /^[1-9A-HJ-NP-Za-km-z]{32,44}$/;
-    if (!wallet.walletAddr || !solanaRegex.test(wallet.walletAddr.trim())) {
-      console.log(
-        `[handleShowWallet] Invalid wallet address for ${userName}:`,
-        wallet.walletAddr
-      );
+    if (!wallet.walletAddr) {
       await ctx.reply("❌ Invalid or missing wallet address.");
       return;
     }
