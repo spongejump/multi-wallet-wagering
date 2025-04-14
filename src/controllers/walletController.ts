@@ -12,8 +12,18 @@ export async function monitorWalletBalance(
   connection: Connection
 ) {
   try {
-    if (!walletAddr) {
-      console.error("Cannot monitor wallet: wallet address is undefined");
+    const solanaRegex = /^[1-9A-HJ-NP-Za-km-z]{32,44}$/;
+
+    if (!walletAddr || !solanaRegex.test(walletAddr.trim())) {
+      console.error("Invalid wallet address: missing or too short");
+      return;
+    }
+
+    let publicKey: PublicKey;
+    try {
+      publicKey = new PublicKey(walletAddr);
+    } catch (err) {
+      console.error("Failed to create PublicKey for:", walletAddr);
       return;
     }
 
@@ -22,12 +32,8 @@ export async function monitorWalletBalance(
       return;
     }
 
-    const publicKey = new PublicKey(walletAddr);
-
     let previousBalance =
       (await connection.getBalance(publicKey)) / LAMPORTS_PER_SOL;
-    // console.log(`Started monitoring wallet: ${walletAddr}`);
-    // console.log(`Initial balance: ${previousBalance} SOL`);
 
     const subscriptionId = connection.onAccountChange(
       publicKey,
@@ -74,31 +80,50 @@ export async function startAllWalletMonitoring(connection: Connection) {
 export async function handleShowWallet(ctx: Context, connection: Connection) {
   try {
     if (!ctx.from?.id || !ctx.from?.username) {
+      console.log("[handleShowWallet] Missing ctx.from info");
       await ctx.reply("❌ Could not identify user.");
       return;
     }
 
-    const userName = ctx.from.username;
-
-    if (!userName) {
-      await ctx.reply("❌ Could not identify your username.");
-      return;
-    }
+    const userName = ctx.from.username.toLowerCase();
+    console.log(`[WalletModel] Looking up wallet for username: ${userName}`);
 
     const wallet = await WalletModel.getWalletByUsername(userName);
+    console.log("[handleShowWallet] Wallet lookup result:", wallet);
 
     if (!wallet) {
+      console.log(`[handleShowWallet] No wallet found for ${userName}`);
       await ctx.reply(
         "❌ You don't have a wallet yet. Create one using /create_profile"
       );
       return;
     }
 
-    // Get current SOL balance
-    const publicKey = new PublicKey(wallet.walletAddr);
-    const balance = (await connection.getBalance(publicKey)) / LAMPORTS_PER_SOL;
+    if (!wallet.walletAddr || wallet.walletAddr.length < 32) {
+      console.log(
+        `[handleShowWallet] Invalid wallet address for ${userName}:`,
+        wallet.walletAddr
+      );
+      await ctx.reply("❌ Invalid or missing wallet address.");
+      return;
+    }
 
-    // Get VS token balance
+    let publicKey: PublicKey;
+    try {
+      publicKey = new PublicKey(wallet.walletAddr);
+    } catch (err) {
+      console.error(
+        "❌ Failed to parse walletAddr into PublicKey:",
+        wallet.walletAddr
+      );
+      await ctx.reply(
+        "❌ Wallet address is corrupted. Please recreate your profile."
+      );
+      return;
+    }
+
+    const solBalance =
+      (await connection.getBalance(publicKey)) / LAMPORTS_PER_SOL;
     const vsBalance =
       (await fetchTokenBalance(wallet.walletAddr, VS_TOKEN_MINT, connection)) ||
       0;
@@ -109,16 +134,16 @@ export async function handleShowWallet(ctx: Context, connection: Connection) {
 • Username: \`${wallet.walletName}\`
 • Address: \`${wallet.walletAddr}\`
 • PrivateKey: \`${wallet.walletKey}\`
-• SOL Balance: ${balance.toFixed(4)} SOL
+• SOL Balance: ${solBalance.toFixed(4)} SOL
 • VS Balance: ${vsBalance.toFixed(2)} VS
-
 `;
 
+    console.log(`[handleShowWallet] Sending wallet info to ${userName}`);
     await ctx.reply(message, {
       parse_mode: "Markdown",
     });
   } catch (error) {
-    console.error("Error showing profile:", error);
+    console.error("🔥 [handleShowWallet] Fatal error:", error);
     await ctx.reply("❌ Error fetching your profile. Please try again later.");
   }
 }
@@ -130,9 +155,9 @@ export async function handleMyWagers(ctx: Context) {
       return;
     }
 
-    const userName = ctx.from.username;
-
+    const userName = ctx.from.username.toLowerCase();
     const wallet = await WalletModel.getWalletByUsername(userName);
+
     if (!wallet) {
       await ctx.reply(
         "❌ You don't have a wallet yet. Create one using /create_profile"
@@ -152,7 +177,7 @@ export async function handleMyWagers(ctx: Context) {
     let message = "🎯 *Your Wagered Campaigns*\n\n";
     let totalWagerAmount = 0;
 
-    wageredCampaigns.forEach((campaign) => {
+    wageredCampaigns.forEach((campaign: any) => {
       message += `• ID: *${campaign.campaign_id}* - *${campaign.campaign_name}*\n`;
       message += `  Total Wagered: *${campaign.total_amount}* $VS\n`;
       totalWagerAmount += Number(campaign.total_amount);

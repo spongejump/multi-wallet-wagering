@@ -142,83 +142,87 @@ export async function handleWagerButton(ctx: any) {
       return;
     }
 
+    // ✅ Validate wallet key before using it
+    if (!userWallet.walletKey) {
+      await ctx.answerCbQuery("❌ Your wallet is not properly configured.");
+      return;
+    }
+
+    let userKeypair;
     try {
-      const userKeypair = Keypair.fromSecretKey(
-        bs58.decode(userWallet.walletKey)
+      const secretKey = bs58.decode(userWallet.walletKey);
+      userKeypair = Keypair.fromSecretKey(secretKey);
+    } catch (err) {
+      console.error("Invalid walletKey:", userWallet.walletKey);
+      await ctx.answerCbQuery(
+        "❌ Failed to load your wallet. Please recreate it."
+      );
+      return;
+    }
+
+    // ✅ Optional: Validate the wallet address itself
+    try {
+      new PublicKey(userWallet.walletAddr);
+    } catch (err) {
+      await ctx.answerCbQuery("❌ Invalid wallet address.");
+      return;
+    }
+
+    const currentBalance =
+      (await fetchTokenBalance(
+        userWallet.walletAddr,
+        VS_TOKEN_MINT,
+        connection
+      )) || 0;
+
+    if (currentBalance < session.amount) {
+      await ctx.answerCbQuery(
+        `❌ Insufficient VS tokens. You have ${currentBalance.toFixed(
+          2
+        )} VS but need ${session.amount.toFixed(2)} VS`
+      );
+      return;
+    }
+
+    const wagerData = {
+      campaign_id: session.campaignId,
+      wallet_id: userWallet.walletAddr,
+      amount: session.amount,
+      candidate: side === "left" ? campaign.left_button : campaign.right_button,
+      ip_address: "123.123.123.123",
+    };
+
+    const wagerId = await WagerModel.createWager(wagerData);
+    if (!wagerId) throw new Error("Failed to add wager record");
+
+    try {
+      const signature = await sendVSTokens(
+        connection,
+        userKeypair,
+        targetWallet,
+        session.amount
       );
 
-      const currentBalance =
-        (await fetchTokenBalance(
-          userWallet.walletAddr,
-          VS_TOKEN_MINT,
-          connection
-        )) || 0;
+      await WagerModel.updateTransactionHash(wagerId, signature);
 
-      if (currentBalance < session.amount) {
-        await ctx.answerCbQuery(
-          `❌ Insufficient VS tokens. You have ${currentBalance.toFixed(
-            2
-          )} VS but need ${session.amount.toFixed(2)} VS`
-        );
-        return;
-      }
-
-      const wagerData = {
-        campaign_id: session.campaignId,
-        wallet_id: userWallet.walletAddr,
-        amount: session.amount,
-        candidate:
-          side === "left" ? campaign.left_button : campaign.right_button,
-        ip_address: "123.123.123.123",
-        // ip_address: `tg:${ctx.from.id}:${ctx.from.username || "unknown"}`,
-      };
-
-      const wagerId = await WagerModel.createWager(wagerData);
-
-      if (!wagerId) {
-        throw new Error("Failed to add wager record");
-      }
-
-      try {
-        const signature = await sendVSTokens(
-          connection,
-          userKeypair,
-          targetWallet,
-          session.amount
-        );
-
-        await WagerModel.updateTransactionHash(wagerId, signature);
-
-        const confirmMessage = `✅ *Wager Placed Successfully!*
+      const confirmMessage = `✅ *Wager Placed Successfully!*
 
 🎯 *Campaign:* ${campaign.name}
 💰 *Amount:* ${session.amount} VS
 🎲 *Prediction:* ${
-          side === "left" ? campaign.left_button : campaign.right_button
-        }
+        side === "left" ? campaign.left_button : campaign.right_button
+      }
 🔍 [View Transaction](${getSolscanUrl(signature)})`;
 
-        await ctx.editMessageText(confirmMessage, {
-          parse_mode: "Markdown",
-          disable_web_page_preview: true,
-        });
+      await ctx.editMessageText(confirmMessage, {
+        parse_mode: "Markdown",
+        disable_web_page_preview: true,
+      });
 
-        userWagerSessions.delete(ctx.from.id);
-      } catch (error) {
-        await WagerModel.updateTransactionHash(wagerId, "failed");
-        throw error;
-      }
-    } catch (error: any) {
-      console.error("Error processing wager transaction:", error);
-      let errorMessage = "❌ Error processing transaction";
-
-      if (
-        error.logs?.some((log: string) => log.includes("insufficient funds"))
-      ) {
-        errorMessage = "❌ Insufficient VS tokens in your wallet";
-      }
-
-      await ctx.answerCbQuery(errorMessage);
+      userWagerSessions.delete(ctx.from.id);
+    } catch (error) {
+      await WagerModel.updateTransactionHash(wagerId, "failed");
+      throw error;
     }
   } catch (error) {
     console.error("Error handling wager button:", error);

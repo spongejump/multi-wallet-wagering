@@ -41,7 +41,7 @@ if (!TELEGRAM_BOT_TOKEN || !TELEGRAM_CHAT_ID || !TOKEN_MINT_ADDRESS) {
 async function initializeDatabase() {
   try {
     await WalletModel.createTable();
-    console.log("✅ Database initialized successfully");
+    console.log("✅ Database d successfully");
   } catch (error) {
     console.error("❌ Failed to initialize database:", error);
     process.exit(1);

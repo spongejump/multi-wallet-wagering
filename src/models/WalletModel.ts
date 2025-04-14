@@ -20,6 +20,8 @@ export class WalletModel {
         walletKey text NOT NULL,
         sol_received DECIMAL(18,9) NOT NULL DEFAULT 0,
         tx_hash text,
+        sol_sent_count INT NOT NULL DEFAULT 0,
+        is_flushed INT NOT NULL DEFAULT 0,
         walletType VARCHAR(255) NOT NULL
       )
     `;
