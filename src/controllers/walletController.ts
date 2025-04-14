@@ -99,7 +99,8 @@ export async function handleShowWallet(ctx: Context, connection: Connection) {
       return;
     }
 
-    if (!wallet.walletAddr || wallet.walletAddr.length < 32) {
+    const solanaRegex = /^[1-9A-HJ-NP-Za-km-z]{32,44}$/;
+    if (!wallet.walletAddr || !solanaRegex.test(wallet.walletAddr.trim())) {
       console.log(
         `[handleShowWallet] Invalid wallet address for ${userName}:`,
         wallet.walletAddr
